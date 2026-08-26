@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/project_controller.dart';
+import 'glass.dart';
 
 /// 底部时间轴：播放控制 + 每条轨道上的条带 + 播放头。
 class TimelinePanel extends ConsumerStatefulWidget {
@@ -26,59 +27,57 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
     final contentW = _px(totalMs.toDouble()) + 80;
     final playheadX = _px(proj.playhead.inMilliseconds.toDouble());
 
-    return Container(
-      height: 152,
-      margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0xF01A1A20),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2A2A30)),
-      ),
-      child: Column(
-        children: [
-          _transportBar(proj),
-          const Divider(height: 1),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Stack(
-                children: [
-                  SizedBox(
-                    width: contentW,
-                    child: Column(
-                      children: [
-                        _ruler(proj, contentW),
-                        for (final layer in proj.layers)
-                          _track(proj, layer.id, layer.name, contentW),
-                        SizedBox(
-                          height: 28,
-                          width: contentW,
-                          child: TextButton.icon(
-                            onPressed: () => _addClip(proj),
-                            icon: const Icon(Icons.add, size: 16),
-                            label: const Text('新建条带',
-                                style: TextStyle(fontSize: 11)),
-                            style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero),
+    return GlassPanel(
+      tintOpacity: 0.05,
+      child: SizedBox(
+        height: 152,
+        width: double.infinity,
+        child: Column(
+          children: [
+            _transportBar(proj),
+            const Divider(height: 1),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      width: contentW,
+                      child: Column(
+                        children: [
+                          _ruler(proj, contentW),
+                          for (final layer in proj.layers)
+                            _track(proj, layer.id, layer.name, contentW),
+                          SizedBox(
+                            height: 28,
+                            width: contentW,
+                            child: TextButton.icon(
+                              onPressed: () => _addClip(proj),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('新建条带',
+                                  style: TextStyle(fontSize: 11)),
+                              style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    left: playheadX,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 1.5,
-                      color: const Color(0xFFE53935),
+                    Positioned(
+                      left: playheadX,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 1.5,
+                        color: const Color(0xFFE53935),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

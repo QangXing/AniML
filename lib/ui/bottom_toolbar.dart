@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/project_controller.dart';
 import '../services/camera_recorder.dart';
 import '../utils/constants.dart';
+import 'glass.dart';
 
 /// 左下角工具栏：搜索 / 更改 / 摄像机（摄像机模式下显示录制控制）。
 class BottomToolbar extends ConsumerStatefulWidget {
@@ -21,48 +22,44 @@ class _BottomToolbarState extends ConsumerState<BottomToolbar> {
     final proj = ref.watch(projectProvider);
     final inCamera = proj.mode == AppMode.camera;
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (inCamera) ...[
-            _recordControl(proj),
-            const SizedBox(width: 12),
-          ],
-          _toolButton(
-            icon: Icons.travel_explore,
-            active: proj.mode == AppMode.search,
-            tooltip: '搜索（浏览）',
-            onTap: () => proj.setMode(AppMode.search),
-          ),
-          const SizedBox(width: 8),
-          _toolButton(
-            icon: Icons.edit,
-            active: proj.mode == AppMode.edit,
-            tooltip: '更改（编辑）',
-            onTap: () => proj.setMode(AppMode.edit),
-          ),
-          const SizedBox(width: 8),
-          _toolButton(
-            icon: Icons.videocam,
-            active: proj.mode == AppMode.camera,
-            tooltip: '摄像机',
-            onTap: () => proj.setMode(AppMode.camera),
-          ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (inCamera) ...[
+          _recordControl(proj),
+          const SizedBox(width: 12),
         ],
-      ),
+        _toolButton(
+          icon: Icons.travel_explore,
+          active: proj.mode == AppMode.search,
+          tooltip: '搜索（浏览）',
+          onTap: () => proj.setMode(AppMode.search),
+        ),
+        const SizedBox(width: 8),
+        _toolButton(
+          icon: Icons.edit,
+          active: proj.mode == AppMode.edit,
+          tooltip: '更改（编辑）',
+          onTap: () => proj.setMode(AppMode.edit),
+        ),
+        const SizedBox(width: 8),
+        _toolButton(
+          icon: Icons.videocam,
+          active: proj.mode == AppMode.camera,
+          tooltip: '摄像机',
+          onTap: () => proj.setMode(AppMode.camera),
+        ),
+      ],
     );
   }
 
   Widget _recordControl(ProjectController proj) {
     final recording = CameraRecorder.isRecording;
-    return Container(
+    return GlassPanel(
+      borderRadius: 999,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xCC1A1A1E),
-        borderRadius: BorderRadius.circular(24),
-      ),
+      tintOpacity: 0.1,
+      blur: 22,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -124,19 +121,14 @@ class _BottomToolbarState extends ConsumerState<BottomToolbar> {
     required VoidCallback onTap,
   }) {
     final color = active ? AppConstants.iconGrayActive : AppConstants.iconGray;
-    return Material(
-      color: const Color(0xCC1A1A1E),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Tooltip(
-          message: tooltip,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Icon(icon, color: color, size: AppConstants.toolbarIconSize),
-          ),
-        ),
+    return GlassButton(
+      onTap: onTap,
+      shape: BoxShape.circle,
+      tintOpacity: 0.08,
+      padding: const EdgeInsets.all(11),
+      child: Tooltip(
+        message: tooltip,
+        child: Icon(icon, color: color, size: AppConstants.toolbarIconSize),
       ),
     );
   }

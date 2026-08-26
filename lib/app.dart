@@ -3,31 +3,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'ui/render_page.dart';
 import 'controllers/project_controller.dart';
-import 'utils/constants.dart';
 
 class AniMLApp extends ConsumerWidget {
   const AniMLApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ThemeMode.dark;
     return MaterialApp(
       title: 'AniML',
       debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFF2962FF),
-        scaffoldBackgroundColor: const Color(0xFF111113),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFF2962FF),
-        scaffoldBackgroundColor: const Color(0xFF111113),
-      ),
+      themeMode: ThemeMode.dark,
+      theme: _theme(),
+      darkTheme: _theme(),
       home: const HomeShell(),
+    );
+  }
+
+  ThemeData _theme() {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF6FA0FF),
+        secondary: Color(0xFF8B5CFF),
+        surface: Color(0x00FFFFFF),
+        onSurface: Color(0xFFEDF0F5),
+      ),
+      scaffoldBackgroundColor: const Color(0xFF0B0D16),
+      dividerColor: const Color(0x1FFFFFFF),
+      fontFamilyFallback: const ['PingFang SC', 'Noto Sans SC'],
     );
   }
 }

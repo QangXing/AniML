@@ -10,8 +10,12 @@ class AppConstants {
   AppConstants._();
 
   static const double toolbarIconSize = 22.0;
-  static const Color iconGray = Color(0xFF9E9E9E);
-  static const Color iconGrayActive = Color(0xFF616161);
+  static const Color iconGray = Color(0xFFB8BDC8); // 简洁低饱和灰
+  static const Color iconGrayActive = Color(0xFF6FA0FF); // 高亮主题蓝
+  static const Color panelText = Color(0xFFEDF0F5);
+  static const Color panelTextSub = Color(0xFF9AA3B5);
+  static const Color panelBorder = Color(0x26FFFFFF);
+  static const Color divider = Color(0x1FFFFFFF);
   static const Color renderAreaBorder = Color(0xFFE5E5E5);
   static const Color gridColor = Color(0xFFDCDCDC);
   static const Color axisColor = Color(0xFFBDBDBD);

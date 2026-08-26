@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/project_controller.dart';
 import '../utils/constants.dart';
+import 'glass.dart';
 
 /// 右侧属性面板：渲染区尺寸、底色、网格、摄像机设置（摄像机模式下）。
 class PropertyPanel extends ConsumerStatefulWidget {
@@ -40,32 +41,31 @@ class _PropertyPanelState extends ConsumerState<PropertyPanel> {
     final canvas = proj.canvas;
     final inCamera = proj.mode == AppMode.camera;
 
-    return Container(
-      width: 240,
-      margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xE618181C),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2A2A30)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Row(
-              children: [
-                const Text('属性', style: TextStyle(fontWeight: FontWeight.bold)),
-                const Spacer(),
-                Icon(_expanded ? Icons.expand_less : Icons.expand_more,
-                    size: 18),
-              ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: GlassPanel(
+        tintOpacity: 0.06,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Row(
+                children: [
+                  const Text('属性',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Color(0xFFEDF0F5))),
+                  const Spacer(),
+                  Icon(_expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18, color: const Color(0xFFB8BDC8)),
+                ],
+              ),
             ),
-          ),
           if (_expanded) ...[
             const SizedBox(height: 8),
-            const Text('渲染区', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text('渲染区', style: TextStyle(fontSize: 12, color: Color(0xFF9AA3B5))),
             const SizedBox(height: 6),
             Row(
               children: [
@@ -102,7 +102,7 @@ class _PropertyPanelState extends ConsumerState<PropertyPanel> {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('背景色', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text('背景色', style: TextStyle(fontSize: 12, color: Color(0xFF9AA3B5))),
                 const Spacer(),
                 GestureDetector(
                   onTap: () async {
@@ -124,7 +124,7 @@ class _PropertyPanelState extends ConsumerState<PropertyPanel> {
                 ),
                 const SizedBox(width: 12),
                 Text('网格',
-                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: TextStyle(fontSize: 12, color: Color(0xFF9AA3B5))),
                 Switch(
                   value: proj.showGrid,
                   onChanged: (v) => proj.setGridVisible(v),
@@ -133,7 +133,7 @@ class _PropertyPanelState extends ConsumerState<PropertyPanel> {
             ),
             if (inCamera) ...[
               const Divider(height: 20),
-              const Text('摄像机', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const Text('摄像机', style: TextStyle(fontSize: 12, color: Color(0xFF9AA3B5))),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 value: proj.camera.format,
@@ -163,7 +163,7 @@ class _PropertyPanelState extends ConsumerState<PropertyPanel> {
               ),
             ],
           ],
-        ],
+        ),
       ),
     );
   }
