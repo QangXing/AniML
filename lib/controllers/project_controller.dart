@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/anime_layer.dart';
+import '../models/canvas_config.dart';
 import '../models/project_config.dart';
 import '../services/html_compiler.dart';
 import '../utils/constants.dart';
@@ -269,6 +271,7 @@ class ProjectController extends ChangeNotifier {
 
   _PlayheadHook? _hook;
   set playheadHook(_PlayheadHook? h) => _hook = h;
+  _PlayheadHook? get playheadHook => _hook;
   void _onPlayhead() => _hook?.call(this);
 
   // ------------------------------------------------------------------ 摄像机

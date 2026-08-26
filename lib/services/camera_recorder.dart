@@ -31,7 +31,9 @@ class CameraRecorder {
   static Future<String?> stop() async {
     if (!_recording) return null;
     _recording = false;
-    final path = await FlutterScreenRecording.stopRecordScreen();
-    return path;
+    // 注意：flutter_screen_recording 2.x 中 stopRecordScreen 是一个 getter，
+    // 返回 Future<String>，不能当作函数调用。
+    final path = await FlutterScreenRecording.stopRecordScreen;
+    return path.isEmpty ? null : path;
   }
 }

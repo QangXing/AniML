@@ -18,7 +18,7 @@ class RenderArea extends ConsumerStatefulWidget {
 }
 
 class _RenderAreaState extends ConsumerState<RenderArea> {
-  final Map<String, WebViewController> _controllers = {};
+  final Map<String, InAppWebViewController> _controllers = {};
   final Map<String, bool> _loaded = {};
   double _fitScale = 1.0;
 
@@ -156,26 +156,26 @@ class _RenderAreaState extends ConsumerState<RenderArea> {
 
   // ------------------------------------------------------------------ 层 WebView
   Widget _buildLayer(AniLayer layer, ProjectController proj, WebViewPool pool) {
-    final controller = _controllers.putIfAbsent(layer.id, WebViewController.new);
-
     final dim = proj.mode == AppMode.edit &&
         proj.activeLayerId != null &&
         proj.activeLayerId != layer.id;
 
     final web = InAppWebView(
       key: ValueKey('layer_${layer.id}'),
-      controller: controller,
       initialData: InAppWebViewInitialData(
         data: layer.source,
-        baseUrl: layer.assetPath != null ? WebUri.file(layer.assetPath!) : null,
+        baseUrl: layer.assetPath != null
+            ? WebUri.uri(Uri.file(layer.assetPath!))
+            : null,
       ),
       initialSettings: InAppWebViewSettings(
-        javascriptEnabled: true,
+        javaScriptEnabled: true,
         transparentBackground: true,
         supportZoom: false,
       ),
       gestureRecognizers: null,
       onWebViewCreated: (c) {
+        _controllers[layer.id] = c;
         pool.register(layer.id, c);
       },
       onLoadStop: (c, url) async {

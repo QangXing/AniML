@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,8 +23,8 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
   Widget build(BuildContext context) {
     final proj = ref.watch(projectProvider);
     final totalMs = proj.timelineDuration.inMilliseconds;
-    final contentW = _px(totalMs) + 80;
-    final playheadX = _px(proj.playhead.inMilliseconds);
+    final contentW = _px(totalMs.toDouble()) + 80;
+    final playheadX = _px(proj.playhead.inMilliseconds.toDouble());
 
     return Container(
       height: 152,
@@ -158,8 +159,12 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
         children: [
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.15),
-              border: const Border(bottom: BorderSide(color: Color(0xFF2A2A30), width: 1)),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.15),
+                border: const Border(
+                  bottom: BorderSide(color: Color(0xFF2A2A30), width: 1),
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -175,8 +180,8 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
   }
 
   Widget _clipWidget(ProjectController proj, ClipRef clip) {
-    final left = _px(clip.startMs);
-    final width = _px(clip.endMs) - _px(clip.startMs);
+    final left = _px(clip.startMs.toDouble());
+    final width = _px(clip.endMs.toDouble()) - _px(clip.startMs.toDouble());
     return Positioned(
       left: left,
       top: 4,

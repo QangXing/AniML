@@ -72,11 +72,11 @@ class ProjectConfig {
     required this.name,
     this.version = '0.1.0',
     required this.canvas,
-    this.viewport,
-    this.layers,
+    required this.viewport,
+    required this.layers,
     this.timelineDuration = const Duration(seconds: 10),
-    this.timelineClips,
-    this.camera,
+    required this.timelineClips,
+    required this.camera,
   });
 
   String name;

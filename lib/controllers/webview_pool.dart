@@ -8,11 +8,11 @@ import '../utils/js_bridge.dart';
 class WebViewPool extends ChangeNotifier {
   WebViewPool();
 
-  final Map<String, WebViewController> _controllers = {};
+  final Map<String, InAppWebViewController> _controllers = {};
 
   bool has(String layerId) => _controllers.containsKey(layerId);
 
-  void register(String layerId, WebViewController c) {
+  void register(String layerId, InAppWebViewController c) {
     _controllers[layerId] = c;
     notifyListeners();
   }
