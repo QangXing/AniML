@@ -1,0 +1,27 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-plugins-dependencies.json
+*.iml
+*.g.dart
+
+# Android
+android/local.properties
+android/.gradle/
+android/app/.cxx/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 生成物
+*.apk
+*.aab
+*.html.gz
