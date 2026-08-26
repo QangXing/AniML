@@ -136,7 +136,7 @@ class GlassButton extends StatelessWidget {
     super.key,
     required this.onTap,
     required this.child,
-    this.shape = BoxShape.roundRectangle,
+    this.shape = BoxShape.rectangle,
     this.borderRadius = 14,
     this.tintOpacity = 0.06,
     this.borderOpacity = 0.16,

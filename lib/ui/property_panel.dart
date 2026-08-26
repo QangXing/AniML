@@ -163,9 +163,10 @@ class _PropertyPanelState extends ConsumerState<PropertyPanel> {
               ),
             ],
           ],
-        ),
+        ],
       ),
-    );
+    ),
+  );
   }
 
   void _applySize() {
