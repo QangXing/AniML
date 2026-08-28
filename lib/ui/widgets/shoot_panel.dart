@@ -86,14 +86,6 @@ class _ShootPanelState extends State<ShootPanel> {
     await _engine.stop(finish: true);
   }
 
-  Future<void> _cancel() async {
-    await _engine.cancel();
-    setState(() {
-      _recording = false;
-    });
-    rc.setRecording(false);
-  }
-
   @override
   Widget build(BuildContext context) {
     final cfg = rc.config;

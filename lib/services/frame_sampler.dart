@@ -91,8 +91,10 @@ class FrameSampler {
     final fx = x - x0;
     final fy = y - y0;
 
-    List<int> _rgb(int px, int py) =>
-        [src.getRed(px, py), src.getGreen(px, py), src.getBlue(px, py)];
+    List<int> rgb(int px, int py) {
+      final c = src.getPixel(px, py);
+      return [c.r, c.g, c.b];
+    }
 
     List<int> lerp(List<int> a, List<int> b, double t) => [
           (a[0] + (b[0] - a[0]) * t).round().clamp(0, 255).toInt(),
@@ -100,10 +102,10 @@ class FrameSampler {
           (a[2] + (b[2] - a[2]) * t).round().clamp(0, 255).toInt(),
         ];
 
-    final p00 = _rgb(x0.toInt(), y0.toInt());
-    final p10 = _rgb(x0.toInt() + 1, y0.toInt());
-    final p01 = _rgb(x0.toInt(), y0.toInt() + 1);
-    final p11 = _rgb(x0.toInt() + 1, y0.toInt() + 1);
+    final p00 = rgb(x0.toInt(), y0.toInt());
+    final p10 = rgb(x0.toInt() + 1, y0.toInt());
+    final p01 = rgb(x0.toInt(), y0.toInt() + 1);
+    final p11 = rgb(x0.toInt() + 1, y0.toInt() + 1);
 
     final top = lerp(p00, p10, fx);
     final bottom = lerp(p01, p11, fx);
