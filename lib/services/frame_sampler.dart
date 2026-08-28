@@ -93,7 +93,7 @@ class FrameSampler {
 
     List<int> rgb(int px, int py) {
       final c = src.getPixel(px, py);
-      return [c.r, c.g, c.b];
+      return [c.r.toInt(), c.g.toInt(), c.b.toInt()];
     }
 
     List<int> lerp(List<int> a, List<int> b, double t) => [
