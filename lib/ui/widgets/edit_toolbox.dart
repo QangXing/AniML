@@ -4,6 +4,7 @@ import '../../core/app_theme.dart';
 import '../../models/presets.dart';
 import '../../models/render_config.dart';
 import '../../state/render_controller.dart';
+import 'press_scale.dart';
 
 /// 更改模式下的右侧可拉取工具箱：调整渲染区长宽、比例、输出像素。
 class EditToolbox extends StatefulWidget {
@@ -69,12 +70,15 @@ class _EditToolboxState extends State<EditToolbox> {
                   const Text('工具箱',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                   const Spacer(),
-                  IconButton(
-                    tooltip: '收起工具箱',
-                    icon: const Icon(Icons.keyboard_arrow_right, color: AppTheme.pureGrey),
-                    onPressed: () {
-                      if (widget.visible) widget.onClose?.call();
-                    },
+                  PressScale(
+                    pressedScale: 0.85,
+                    child: IconButton(
+                      tooltip: '收起工具箱',
+                      icon: const Icon(Icons.keyboard_arrow_right, color: AppTheme.pureGrey),
+                      onPressed: () {
+                        if (widget.visible) widget.onClose?.call();
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -173,14 +177,16 @@ class _EditToolboxState extends State<EditToolbox> {
                       const SizedBox(height: 20),
                       ConstrainedBox(
                         constraints: const BoxConstraints.tightFor(width: double.infinity),
-                        child: FilledButton.tonalIcon(
-                          onPressed: () {
-                            final w = int.tryParse(_wCtrl.text) ?? cfg.outputW;
-                            final h = int.tryParse(_hCtrl.text) ?? cfg.outputH;
-                            widget.controller.setOutputSize(w, h);
-                          },
-                          icon: const Icon(Icons.check, size: 18),
-                          label: const Text('应用像素尺寸'),
+                        child: PressScale(
+                          child: FilledButton.tonalIcon(
+                            onPressed: () {
+                              final w = int.tryParse(_wCtrl.text) ?? cfg.outputW;
+                              final h = int.tryParse(_hCtrl.text) ?? cfg.outputH;
+                              widget.controller.setOutputSize(w, h);
+                            },
+                            icon: const Icon(Icons.check, size: 18),
+                            label: const Text('应用像素尺寸'),
+                          ),
                         ),
                       ),
                     ],
@@ -305,17 +311,20 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0x14FFFFFF),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0x228A9099)),
+    return PressScale(
+      pressedScale: 0.9,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0x14FFFFFF),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0x228A9099)),
+          ),
+          child: Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
         ),
-        child: Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
       ),
     );
   }

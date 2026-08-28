@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../models/presets.dart';
 import '../services/html_import.dart';
+import 'widgets/press_scale.dart';
 
 /// 左上角“导入 HTML”毛玻璃按钮 + 导入方式弹窗。
 class ImportControl extends StatelessWidget {
@@ -17,18 +18,20 @@ class ImportControl extends StatelessWidget {
       radius: 12,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () => _showImportSheet(context),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.upload_file, size: 20, color: AppTheme.pureGrey),
-                SizedBox(width: 8),
-                Text('导入 HTML', style: TextStyle(color: AppTheme.textPrimary, fontSize: 13)),
-              ],
+        child: PressScale(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => _showImportSheet(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.upload_file, size: 20, color: AppTheme.pureGrey),
+                  SizedBox(width: 8),
+                  Text('导入 HTML', style: TextStyle(color: AppTheme.textPrimary, fontSize: 13)),
+                ],
+              ),
             ),
           ),
         ),
@@ -120,10 +123,16 @@ class ImportControl extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () => ctrl.text.isNotEmpty ? Navigator.pop(ctx, ctrl.text) : null,
-            child: const Text('确定'),
+          PressScale(
+            pressedScale: 0.94,
+            child: TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          ),
+          PressScale(
+            pressedScale: 0.94,
+            child: FilledButton(
+              onPressed: () => ctrl.text.isNotEmpty ? Navigator.pop(ctx, ctrl.text) : null,
+              child: const Text('确定'),
+            ),
           ),
         ],
       ),
@@ -139,20 +148,23 @@ class _SheetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0x14FFFFFF),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
+    return PressScale(
+      pressedScale: 0.96,
+      child: Material(
+        color: const Color(0x14FFFFFF),
         borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icon, color: AppTheme.accent, size: 22),
-              const SizedBox(width: 12),
-              Text(label, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
-            ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, color: AppTheme.accent, size: 22),
+                const SizedBox(width: 12),
+                Text(label, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
+              ],
+            ),
           ),
         ),
       ),

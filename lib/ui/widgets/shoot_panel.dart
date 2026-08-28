@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 import '../../services/recording_engine.dart';
 import '../../state/render_controller.dart';
+import 'press_scale.dart';
 
 /// 拍摄模式控制面板：设置时长/帧率，抓取渲染区实时像素并合成 MP4。
 class ShootPanel extends StatefulWidget {
@@ -102,7 +103,18 @@ class _ShootPanelState extends State<ShootPanel> {
       bottom: 20,
       child: Align(
         alignment: Alignment.bottomLeft,
-        child: GlassBackdrop(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          builder: (context, t, child) => Opacity(
+            opacity: t,
+            child: Transform.translate(
+              offset: Offset(0, (1 - t) * 16),
+              child: child,
+            ),
+          ),
+          child: GlassBackdrop(
           radius: 22,
           child: Container(
             width: 360,
@@ -161,44 +173,57 @@ class _ShootPanelState extends State<ShootPanel> {
                   Text('已保存：$_resultPath',
                       style: const TextStyle(fontSize: 12, color: AppTheme.accent)),
                   const SizedBox(height: 8),
-                  FilledButton.tonalIcon(
-                    onPressed: () => setState(() => _resultPath = null),
-                    icon: const Icon(Icons.replay, size: 18),
-                    label: const Text('再拍一段'),
+                  PressScale(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () => setState(() => _resultPath = null),
+                      icon: const Icon(Icons.replay, size: 18),
+                      label: const Text('再拍一段'),
+                    ),
                   ),
                 ] else if (_error != null) ...[
                   const SizedBox(height: 8),
                   Text('失败：$_error',
                       style: const TextStyle(fontSize: 12, color: Color(0xFFD9534F))),
                   const SizedBox(height: 8),
-                  FilledButton.tonalIcon(
-                    onPressed: () => setState(() => _error = null),
-                    icon: const Icon(Icons.replay, size: 18),
-                    label: const Text('重试'),
+                  PressScale(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () => setState(() => _error = null),
+                      icon: const Icon(Icons.replay, size: 18),
+                      label: const Text('重试'),
+                    ),
                   ),
                 ] else
                   Align(
                     alignment: Alignment.centerRight,
                     child: _recording
-                        ? FilledButton.icon(
-                            onPressed: _stop,
-                            icon: const Icon(Icons.stop, size: 20, color: Colors.white),
-                            label: const Text('停止并合成'),
-                            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB84A4A)),
+                        ? PressScale(
+                            pressedScale: 0.94,
+                            child: FilledButton.icon(
+                              onPressed: _stop,
+                              icon: const Icon(Icons.stop, size: 20, color: Colors.white),
+                              label: const Text('停止并合成'),
+                              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB84A4A)),
+                            ),
                           )
                         : Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (_error != null)
-                                TextButton(
-                                  onPressed: () => setState(() => _error = null),
-                                  child: const Text('重试'),
+                                PressScale(
+                                  pressedScale: 0.94,
+                                  child: TextButton(
+                                    onPressed: () => setState(() => _error = null),
+                                    child: const Text('重试'),
+                                  ),
                                 ),
-                              FilledButton.icon(
-                                onPressed: _start,
-                                icon: const Icon(Icons.videocam, size: 20, color: Colors.white),
-                                label: const Text('开始拍摄'),
-                                style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
+                              PressScale(
+                                pressedScale: 0.94,
+                                child: FilledButton.icon(
+                                  onPressed: _start,
+                                  icon: const Icon(Icons.videocam, size: 20, color: Colors.white),
+                                  label: const Text('开始拍摄'),
+                                  style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
+                                ),
                               ),
                             ],
                           ),
@@ -206,6 +231,7 @@ class _ShootPanelState extends State<ShootPanel> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

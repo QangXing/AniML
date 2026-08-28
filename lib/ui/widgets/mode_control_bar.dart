@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 import '../../models/editor_mode.dart';
+import 'press_scale.dart';
 
 /// 左下角三功能切换栏：搜索 / 更改 / 拍摄。
 class ModeControlBar extends StatelessWidget {
@@ -69,21 +70,23 @@ class _ModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = active ? AppTheme.accent : AppTheme.pureGrey;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 26, color: color),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(color: active ? AppTheme.accent : AppTheme.textSecondary, fontSize: 11),
-            ),
-          ],
+    return PressScale(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 26, color: color),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(color: active ? AppTheme.accent : AppTheme.textSecondary, fontSize: 11),
+              ),
+            ],
+          ),
         ),
       ),
     );
