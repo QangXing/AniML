@@ -23,6 +23,8 @@ dependencies:
   image: ^4.2.0
   # 把截图帧序列编码为 MP4（维护中的 fork，Android 原生构件在 Maven Central 可用，含 libx264）
   ffmpeg_kit_flutter_new: ^4.6.2
+  # 把录制好的 MP4 存入相册/公共媒体库，方便导出
+  gal: ^2.3.3
 
 dev_dependencies:
   flutter_test:

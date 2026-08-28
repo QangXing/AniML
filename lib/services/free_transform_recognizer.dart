@@ -29,7 +29,7 @@ class FreeTransformState {
 
 /// 2D 自由变换手势识别器。
 ///
-/// 单指：平移；双指：缩放 + 旋转 + 质心平移。
+/// 单指：平移；双指：缩放 + 质心平移（旋转不再由手势驱动）。
 /// [readBase] 在每次手势开始时读取当前绝对变换，作为累计基准。
 class FreeTransformRecognizer extends OneSequenceGestureRecognizer {
   FreeTransformRecognizer({
@@ -112,9 +112,9 @@ class FreeTransformRecognizer extends OneSequenceGestureRecognizer {
     final center = _centroid(pts);
     final span = (pts[0] - pts[1]).distance;
     final angle = (pts[0] - pts[1]).direction;
-    // 由于基准跨度为两指初始距离，这里用相对增量换算缩放因子
+    // 由于基准跨度为两指初始距离，这里用相对增量换算缩放因子。
+    // 旋转不再由手势驱动（留待右侧旋转滑杆精确控制）。
     final scaleFactor = (span) / (snap.span == 0 ? 1 : snap.span);
-    final rot = (angle - snap.angle);
 
     FreeTransformState out;
     if (snap.isSingle) {
@@ -143,7 +143,7 @@ class FreeTransformRecognizer extends OneSequenceGestureRecognizer {
     out = FreeTransformState(
       offset: snap.offset + (center - snap.center),
       scale: snap.scale * scaleFactor,
-      rotation: snap.rotation + rot,
+      rotation: snap.rotation,
     );
     _snap = FreeTransformState(
       offset: out.offset,

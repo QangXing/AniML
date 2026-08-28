@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:gal/gal.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -92,10 +94,26 @@ class RecordingEngine {
         fps: fps,
       );
       _frames.clear();
-      onComplete?.call(file.path, null);
+      // 存入系统相册/公共媒体库，方便用户在系统相册中直接查看、导出、分享。
+      final handled = await _exportToGallery(file.path);
+      onComplete?.call(handled, null);
     } catch (e) {
       _frames.clear();
       onComplete?.call(null, e.toString());
+    }
+  }
+
+  /// 把 MP4 存入系统相册（专辑 AniML），成功后删除私有临时副本，返回展示用路径。
+  Future<String> _exportToGallery(String localPath) async {
+    try {
+      await Gal.requestAccess();
+      await Gal.putVideo(localPath, album: 'AniML');
+      final f = File(localPath);
+      if (await f.exists()) await f.delete();
+      return '相册（AniML）/ render_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    } catch (_) {
+      // 保存相册失败时保留本地私有副本，仍可返回原路径。
+      return localPath;
     }
   }
 

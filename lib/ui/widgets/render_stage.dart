@@ -12,12 +12,12 @@ import '../../services/frame_sampler.dart';
 import '../../services/free_transform_recognizer.dart';
 import '../../state/render_controller.dart';
 
-/// 渲染舞台：承载 HTML 的 WebView 画布 + 叠加的“渲染区”（屏幕模拟窗口）。
+/// 渲染舞台：铺满整屏的背景 + 承载 HTML 的 WebView 画布 + “渲染区”（屏幕模拟窗口）。
 ///
-/// - WebView 铺满整个舞台，HTML 在窗口内外同时显示；
-/// - 渲染区是一个浅边框矩形，模拟“屏幕”；
-/// - 搜索模式下可在页面视图上自由平移 / 缩放 / 旋转；
-/// - 更改/拍摄模式会切换叠加层。
+/// - 背景铺满全屏；
+/// - HTML 以渲染区为准：画布与渲染区同尺寸，被居中定位并裁切在渲染区内；
+/// - 渲染区叠加一个浅边框，模拟“屏幕”；
+/// - 搜索模式下可在渲染区内自由平移 / 缩放 / 旋转（旋转用右侧滑杆）。
 class RenderStage extends StatefulWidget {
   const RenderStage({
     super.key,
@@ -95,9 +95,6 @@ class RenderStageState extends State<RenderStage> {
       bytes,
       stageSize: stage,
       renderRect: rect,
-      offset: cfg.offset,
-      scale: cfg.scale,
-      rotation: cfg.rotation,
       outputWidth: outW,
       outputHeight: outH,
     );
@@ -115,8 +112,12 @@ class RenderStageState extends State<RenderStage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
+              // 底层：铺满整屏的渲染背景
+              _buildBackground(),
+              // HTML 以渲染区为准：内容被裁切并限制在渲染窗口内
               _buildCanvas(stage, cfg),
-              _buildWindow(cfg),
+              // 渲染区边框（浅框 + 角标 + 尺寸标签）
+              _buildWindowFrame(cfg),
               if (rc.mode == EditorMode.search) _buildSearchOverlay(),
             ],
           ),
@@ -125,7 +126,20 @@ class RenderStageState extends State<RenderStage> {
     });
   }
 
-  // 页面画布：WebView 整体被平移 / 缩放 / 旋转。
+  // 铺满整屏的渲染背景层。
+  Widget _buildBackground() {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF7F8FA), Color(0xFFE8EBEF)],
+        ),
+      ),
+    );
+  }
+
+  // HTML 画布：尺寸 = 渲染区尺寸，居中定位，整体做平移/缩放/旋转，并裁切在渲染区内。
   Widget _buildCanvas(Size stage, RenderConfig cfg) {
     final content = widget.innerHTMLReady
         ? _web != null
@@ -134,14 +148,13 @@ class RenderStageState extends State<RenderStage> {
         : const _PlaceholderHint();
 
     final canvas = Container(
-      width: stage.width,
-      height: stage.height,
+      width: cfg.displayW,
+      height: cfg.displayH,
       color: Colors.white,
       child: content,
     );
 
-    // 组合变换：q = offset + R(rotation)·S(scale)·p，绕画布左上角(0,0)旋转缩放，
-    // 与 FrameSampler 逆变换保持一致。
+    // 组合变换：q = offset + R(rotation)·S(scale)·p，绕画布左上角(0,0)旋转缩放。
     final transformed = Transform.translate(
       offset: cfg.offset,
       child: Transform.rotate(
@@ -152,11 +165,22 @@ class RenderStageState extends State<RenderStage> {
         ),
       ),
     );
-    return transformed;
+
+    return Positioned(
+      left: stage.width / 2 - cfg.displayW / 2,
+      top: stage.height / 2 - cfg.displayH / 2,
+      child: ClipRect(
+        child: SizedBox(
+          width: cfg.displayW,
+          height: cfg.displayH,
+          child: transformed,
+        ),
+      ),
+    );
   }
 
-  // 渲染区窗口：浅边框矩形 + 尺寸标签（HTML 在其四周继续可见）。
-  Widget _buildWindow(RenderConfig cfg) {
+  // 渲染区边框：只画浅框 + 角标 + 尺寸标签，内容由下层画布填充。
+  Widget _buildWindowFrame(RenderConfig cfg) {
     return IgnorePointer(
       child: CustomPaint(
         painter: _WindowPainter(
@@ -283,7 +307,7 @@ class _SearchHint extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: AppTheme.glassDecoration(radius: 20),
       child: const Text(
-        '拖动平移 · 双指缩放 / 旋转 · 右侧滑杆精确旋转',
+        '拖动平移 · 双指缩放 · 右侧滑杆旋转',
         style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
       ),
     );
@@ -308,15 +332,6 @@ class _WindowPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final rect = Rect.fromCenter(center: center, width: windowSize.width, height: windowSize.height);
-
-    // 极浅的填充，让窗口在浅背景上稍稍可辨
-    final fill = Paint()
-      ..color = accent ? const Color(0x0A5B7CFA) : const Color(0x0DFFFFFF)
-      ..style = PaintingStyle.fill;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, const Radius.circular(6)),
-      fill,
-    );
 
     // 很浅但清晰的边框
     final border = Paint()

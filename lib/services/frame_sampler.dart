@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -14,23 +13,19 @@ import 'package:image/image.dart' as img;
 class FrameSampler {
   /// 采样一个渲染区帧。
   ///
-  /// [screenshotBytes] WebView `takeScreenshot()` 返回的原始截图字节，
-  /// [stageSize] WebView 在舞台上占用的逻辑尺寸，
+  /// [screenshotBytes] 舞台 RepaintBoundary 截图（已包含页面变换）字节，
+  /// [stageSize] 舞台的逻辑尺寸，
   /// [renderRect] 渲染区矩形的逻辑坐标（舞台坐标系内，中心即窗口位置），
-  /// [offset]/[scale]/[rotation] 当前页面变换（与渲染一致），
   /// [outputWidth]/[outputHeight] 输出分辨率。
   static Uint8List? sample(
     Uint8List screenshotBytes, {
     required Size stageSize,
     required Rect renderRect,
-    required Offset offset,
-    required double scale,
-    required double rotation,
     required int outputWidth,
     required int outputHeight,
   }) {
     if (outputWidth <= 0 || outputHeight <= 0) return null;
-    if (stageSize.width <= 0 || scale <= 0) return null;
+    if (stageSize.width <= 0) return null;
 
     final src = img.decodeImage(screenshotBytes);
     if (src == null) return null;
@@ -39,34 +34,25 @@ class FrameSampler {
     final srcH = src.height;
     if (srcW == 0 || srcH == 0) return null;
 
-    // 舞台逻辑单位 -> 截图像素 的比例（宽高应一致）
+    // 舞台逻辑单位 -> 截图像素 的比例（宽高应一致）。
     final r = srcW / stageSize.width;
 
     final out = img.Image(width: outputWidth, height: outputHeight, numChannels: 3);
-
-    final cosR = math.cos(-rotation);
-    final sinR = math.sin(-rotation);
 
     for (var y = 0; y < outputHeight; y++) {
       for (var x = 0; x < outputWidth; x++) {
         final fx = (x + 0.5) / outputWidth;
         final fy = (y + 0.5) / outputHeight;
 
-        // 渲染区内的舞台逻辑坐标
+        // 渲染区内的舞台逻辑坐标。
         final qx = renderRect.left + fx * renderRect.width;
         final qy = renderRect.top + fy * renderRect.height;
 
-        // 逆变换求原始画布（HTML）坐标
-        final tx = qx - offset.dx;
-        final ty = qy - offset.dy;
-        final px = (cosR * tx - sinR * ty) / scale;
-        final py = (sinR * tx + cosR * ty) / scale;
+        // 截图已包含页面变换，直接映射到截图像素即可。
+        final sxC = qx * r;
+        final syC = qy * r;
 
-        // 画布坐标 -> 截图像素（画布原点=（0,0）= 截图左上角）
-        final sxC = px * r;
-        final syC = py * r;
-
-        // 双线性采样
+        // 双线性采样。
         final color = _bilinearPixel(src, srcW, srcH, sxC, syC);
         out.setPixelRgb(x, y, color[0], color[1], color[2]);
       }
