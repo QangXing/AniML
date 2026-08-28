@@ -21,8 +21,8 @@ dependencies:
   path: ^1.9.0
   # 逐帧像素采样与图像编码
   image: ^4.2.0
-  # 把截图帧序列编码为 MP4（默认 LGPL 版，含 libx264）
-  ffmpeg_kit_flutter: ^6.0.3
+  # 把截图帧序列编码为 MP4（维护中的 fork，Android 原生构件在 Maven Central 可用，含 libx264）
+  ffmpeg_kit_flutter_new: ^4.6.2
 
 dev_dependencies:
   flutter_test:
