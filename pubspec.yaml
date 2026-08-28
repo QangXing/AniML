@@ -1,0 +1,33 @@
+name: animl
+description: AniML —— HTML 高像素渲染与录制工作室（毛玻璃 / 白色简洁风，横屏）。
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  # 全局状态管理
+  provider: ^6.1.2
+  # 渲染 HTML 的 WebView
+  webview_flutter: ^4.10.0
+  # 导入本地 .html 文件
+  file_picker: ^8.1.2
+  # 获取临时/应用目录
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  # 逐帧像素采样与图像编码
+  image: ^4.2.0
+  # 把截图帧序列编码为 MP4（默认 LGPL 版，含 libx264）
+  ffmpeg_kit_flutter: ^6.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
