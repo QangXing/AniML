@@ -92,7 +92,7 @@ class FrameSampler {
     final fy = y - y0;
 
     List<int> _rgb(int px, int py) =>
-        [img.getRed(src, px, py), img.getGreen(src, px, py), img.getBlue(src, px, py)];
+        [src.getRed(px, py), src.getGreen(px, py), src.getBlue(px, py)];
 
     List<int> lerp(List<int> a, List<int> b, double t) => [
           (a[0] + (b[0] - a[0]) * t).round().clamp(0, 255).toInt(),

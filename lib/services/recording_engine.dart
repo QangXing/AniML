@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -37,11 +36,11 @@ class RecordingEngine {
   void Function(String? path, String? error)? onComplete;
 
   /// 开始录制，持续 [durationSeconds] 秒。
-  void start(int durationSeconds) async {
+  Future<void> start(int durationSeconds) async {
     await stop();
     _frames.clear();
     _done = false;
-    final total = ((durationSeconds * fps).round()).clamp(1, 1 << 20) as int;
+    final total = ((durationSeconds * fps).round()).clamp(1, 1 << 20).toInt();
 
     // 预启动一次，确保 WebView 可用
     final first = await producer();

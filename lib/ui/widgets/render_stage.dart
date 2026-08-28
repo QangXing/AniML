@@ -1,15 +1,16 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-import '../core/app_theme.dart';
-import '../models/editor_mode.dart';
-import '../models/render_config.dart';
-import '../services/frame_sampler.dart';
-import '../services/free_transform_recognizer.dart';
-import '../state/render_controller.dart';
+import '../../core/app_theme.dart';
+import '../../models/editor_mode.dart';
+import '../../models/render_config.dart';
+import '../../services/frame_sampler.dart';
+import '../../services/free_transform_recognizer.dart';
+import '../../state/render_controller.dart';
 
 /// 渲染舞台：承载 HTML 的 WebView 画布 + 叠加的“渲染区”（屏幕模拟窗口）。
 ///
@@ -33,6 +34,9 @@ class RenderStageState extends State<RenderStage> {
   WebViewController? _web;
   Size? _stageSize;
 
+  /// 包裹整个渲染舞台的 RepaintBoundary，用于拍摄时抓取渲染区画面。
+  final GlobalKey _stageBoundaryKey = GlobalKey();
+
   RenderController get rc => widget.controller;
 
   @override
@@ -43,12 +47,8 @@ class RenderStageState extends State<RenderStage> {
   }
 
   void _initWebView() {
-    final old = _web;
-    if (old != null) {
-      // 释放旧控制器，避免平台视图泄漏
-      old.dispose();
-      _web = null;
-    }
+    // 直接取代旧控制器引用（webview_flutter 不提供显式 dispose）
+    _web = null;
     final html = rc.config.html;
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -66,19 +66,25 @@ class RenderStageState extends State<RenderStage> {
     }
   }
 
-  /// 抓取渲染区当前实时像素，重采样到 [width]x[height] 并返回 JPG 字节。
+  /// 抓取渲染区当前实时画面，重采样到 [width]x[height] 并返回 PNG/JPG 字节。
   ///
   /// [width]/[height] 缺省时使用配置的输出分辨率。
   Future<Uint8List?> produceFrame({int? width, int? height}) async {
-    final web = _web;
+    final boundary = _stageBoundaryKey.currentContext?.findRenderObject();
+    if (boundary is! RenderRepaintBoundary) return null;
     final stage = _stageSize;
-    if (web == null || stage == null) return null;
-    final bytes = await web.takeScreenshot();
-    if (bytes == null) return null;
+    if (stage == null) return null;
+
+    final outW = width ?? rc.config.outputW;
+    final outH = height ?? rc.config.outputH;
+
+    // 从 RepaintBoundary 截图得到整块舞台像素（PNG），再交给 FrameSampler 采样渲染区。
+    final image = await boundary.toImage();
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return null;
+    final bytes = byteData.buffer.asUint8List();
 
     final cfg = rc.config;
-    final outW = width ?? cfg.outputW;
-    final outH = height ?? cfg.outputH;
     final center = Offset(stage.width / 2, stage.height / 2);
     final rect = Rect.fromCenter(
       center: center,
@@ -104,13 +110,16 @@ class RenderStageState extends State<RenderStage> {
       final stage = Size(constraints.maxWidth, constraints.maxHeight);
       if (stage.width > 0) _stageSize = stage;
       return ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildCanvas(stage, cfg),
-            _buildWindow(cfg),
-            if (rc.mode == EditorMode.search) _buildSearchOverlay(),
-          ],
+        child: RepaintBoundary(
+          key: _stageBoundaryKey,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildCanvas(stage, cfg),
+              _buildWindow(cfg),
+              if (rc.mode == EditorMode.search) _buildSearchOverlay(),
+            ],
+          ),
         ),
       );
     });
@@ -242,7 +251,7 @@ class RenderStageState extends State<RenderStage> {
   @override
   void dispose() {
     widget.controller.removeListener(_markNeeds);
-    _web?.dispose();
+    _web = null;
     super.dispose();
   }
 }

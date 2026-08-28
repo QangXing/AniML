@@ -24,7 +24,8 @@ class _HomePageState extends State<HomePage> {
   final RenderController _controller = RenderController()..setHtml(kDefaultHtml);
   final GlobalKey<RenderStageState> _stageKey = GlobalKey<RenderStageState>();
 
-  Future<Uint8List?> _produceFrame() => _stageKey.currentState?.produceFrame();
+  Future<Uint8List?> _produceFrame() =>
+      _stageKey.currentState?.produceFrame() ?? Future.value(null);
 
   @override
   void dispose() {
