@@ -135,7 +135,7 @@ class _EditToolboxState extends State<EditToolbox> {
                         items: [
                           for (var i = 0; i < kOutputPresets.length; i++)
                             DropdownMenuItem(value: i, child: Text(kOutputPresets[i].label)),
-                          DropdownMenuItem(value: -1, child: const Text('自定义')),
+                          const DropdownMenuItem(value: -1, child: Text('自定义')),
                         ],
                         onChanged: (idx) {
                           if (idx == null || idx < 0) return;
