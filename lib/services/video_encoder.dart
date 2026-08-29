@@ -1,55 +1,75 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
-/// 把按时间顺序采集的 JPG/PNG 帧序列编码为 MP4。
+/// 把一组 PNG 帧(PNG 字节)编码成 mp4。
 class VideoEncoder {
-  /// 将 [frames]（帧字节，JPG/PNG）按 [fps] 合成为 [outputPath] 处的 MP4。
-  ///
-  /// 实现：先把帧依次写入临时目录，再用 FFmpeg `-framerate` 拼接。
-  /// 返回输出文件路径；失败时抛出异常。
-  static Future<File> encodeFrames({
+  VideoEncoder._();
+  static final VideoEncoder instance = VideoEncoder._();
+
+  /// [frames] 每帧为 PNG 字节；[width]/[height] 目标像素；[fps] 帧率。
+  /// 返回输出文件路径，失败抛异常。
+  Future<String> encodeFramesToMp4({
     required List<Uint8List> frames,
-    required String outputPath,
-    required double fps,
-    String? progressCallback,
+    required int width,
+    required int height,
+    required int fps,
   }) async {
     if (frames.isEmpty) {
-      throw Exception('没有可编码的帧');
+      throw StateError('没有可用的帧');
     }
+    final temp = Directory((await getTemporaryDirectory()).path + '/frames');
+    if (await temp.exists()) await temp.delete(recursive: true);
+    await temp.create(recursive: true);
 
-    // 1. 写帧到临时目录
-    final tempDir = await Directory(outputPath).parent.createTemp('frames_');
-    final pattern = '${tempDir.path}/frame_%05d.jpg';
+    // 规整每帧尺寸并写盘，供 ffmpeg 按序号读取。
     for (var i = 0; i < frames.length; i++) {
-      File('${tempDir.path}/frame_${_pad(i + 1)}.jpg')
-          .writeAsBytesSync(frames[i], flush: true);
+      final norm = await _normalizePng(frames[i], width, height);
+      final f = File('${temp.path}/frame_${i.toString().padLeft(4, '0')}.png');
+      await f.writeAsBytes(norm, flush: true);
     }
 
-    try {
-      // 2. FFmpeg 合成
-      final cmd =
-          '-y -framerate ${fps.toStringAsFixed(2)} -i "$pattern" '
-          '-c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p '
-          '-movflags +faststart -an "$outputPath"';
-      final session = await FFmpegKit.executeAsync(cmd);
+    final out = '${temp.path}/output_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    // 帧序拼装，编码为 yuv420p，保证大多数播放器可播。
+    final command =
+        '-y -framerate $fps -i "${temp.path}/frame_%04d.png" '
+        '-vf "scale=$width:$height:force_original_aspect_ratio=decrease,pad=$width:$height:(ow-iw)/2:(oh-ih)/2:color=white,fps=$fps,format=yuv420p" '
+        '-c:v libx264 -pix_fmt yuv420p -movflags +faststart "$out"';
 
-      final rc = await session.getReturnCode();
-      if (ReturnCode.isSuccess(rc)) {
-        return File(outputPath);
-      } else if (ReturnCode.isCancel(rc)) {
-        throw Exception('编码已取消');
-      } else {
-        final logs = await session.getAllLogsAsString();
-        throw Exception('FFmpeg 编码失败：\n$logs');
-      }
-    } finally {
-      // 3. 清理临时帧
-      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
-    }
+    final session = await FFmpegKit.execute(command);
+    final rc = await session.getReturnCode();
+    if (ReturnCode.isSuccess(rc)) return out;
+    throw StateError('ffmpeg 编码失败，返回码 $rc');
   }
 
-  static String _pad(int n) => n.toString().padLeft(5, '0');
+  /// 把任意 PNG 解码后重绘为 [width]x[height] 的 PNG 字节。
+  Future<Uint8List> _normalizePng(Uint8List bytes, int width, int height) async {
+    final decoded = img.decodePng(bytes);
+    if (decoded == null) return _resizeFromRaw(bytes, width, height);
+    final resized = img.copyResize(
+      decoded,
+      width: width == 0 ? decoded.width : width,
+      height: height == 0 ? decoded.height : height,
+      interpolation: img.Interpolation.cubic,
+    );
+    return Uint8List.fromList(img.encodePng(resized));
+  }
+
+  Uint8List _resizeFromRaw(Uint8List bytes, int w, int h) {
+    var plain = bytes;
+    final dec = img.decodeImage(plain);
+    if (dec != null) {
+      final r = img.copyResize(dec,
+          width: w, height: h, interpolation: img.Interpolation.cubic);
+      return Uint8List.fromList(img.encodePng(r));
+    }
+    return plain;
+  }
+
+  void toast(String msg) => Fluttertoast.showToast(msg: msg, gravity: ToastGravity.CENTER);
 }

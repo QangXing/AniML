@@ -4,14 +4,16 @@
 build/
 .flutter-plugins
 .flutter-plugins-dependencies
-.idea/
 *.iml
-*.swp
+.idea/
+.gradle/
+.venv/
 
-# 系统文件
+# Generated
+*.png.hash
+
+# OS
 .DS_Store
-Thumbs.db
 
-# 运行时产物
-*.log
-*.tmp
+# ffmpeg temp
+/frames/
