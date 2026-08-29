@@ -7,7 +7,8 @@ import '../theme.dart';
 /// 世界平面边长（逻辑像素）。足够大，摄像机可以自由移动取景。
 const double _worldSize = 4000.0;
 
-/// “渲染世界”：一块浅灰背景画布，中间是带浅色边框的渲染区，上面实时承载 HTML。
+/// “渲染世界”：一块浅灰背景画布，渲染区放在世界原点 (0,0)，
+/// 网格从原点开始并恰好与渲染区边缘对齐，原点位于渲染区左上角。
 /// 渲染背景既当作被拍对象，也承载一个淡化版的 HTML 帧，表现“HTML 也在渲染区外”。
 class RenderCanvas extends StatelessWidget {
   const RenderCanvas(
@@ -27,9 +28,9 @@ class RenderCanvas extends StatelessWidget {
     final cfg = controller.config;
     final rw = cfg.displayWidth;
     final rh = cfg.displayHeight;
-    // 渲染区放在世界中心
-    final left = (_worldSize - rw) / 2;
-    final top = (_worldSize - rh) / 2;
+    // 渲染区左上角对齐世界原点 (0,0)，这样网格从原点铺开即与渲染区对齐。
+    const left = 0.0;
+    const top = 0.0;
 
     return Container(
       width: _worldSize,
@@ -38,8 +39,6 @@ class RenderCanvas extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 背景网格：提示这是一个可以被相机拍摄的“世界”。
-          Positioned.fill(child: CustomPaint(painter: _GridPainter())),
           // 淡化 HTML 帧铺在整个背景上，模拟 HTML 溢出渲染区。
           if (engine.lastSnapshot != null)
             Positioned.fill(
@@ -48,7 +47,7 @@ class RenderCanvas extends StatelessWidget {
                 child: Image.memory(engine.lastSnapshot!, fit: BoxFit.cover),
               ),
             ),
-          // 渲染区：极浅边框 + 内嵌 WebView。
+          // 渲染区：极浅边框 + 内嵌 WebView（外套 RepaintBoundary 供拍摄抓帧）。
           Positioned(
             left: left,
             top: top,
@@ -61,6 +60,12 @@ class RenderCanvas extends StatelessWidget {
               showSnapPlaceholder: engine.lastSnapshot != null,
             ),
           ),
+          // 背景网格叠在最上层（纯取景辅助，不进视频）：
+          // 从原点 (渲染区左上角) 铺开，步长整除渲染区宽高保证边缘对齐。
+          Positioned.fill(
+              child: CustomPaint(
+                  clipBehavior: Clip.none,
+                  painter: _GridPainter(rw: rw, rh: rh))),
         ],
       ),
     );
@@ -106,9 +111,14 @@ class _RenderAreaBox extends StatelessWidget {
             )
           else ...[
             // 只要有 HTML 就挂载 WebView，触发引擎加载；否则引擎永远不会收到加载请求。
+            // 外套 RepaintBoundary：拍摄时引擎用它直取 WebView 当前画面（含动画）。
             IgnorePointer(
               ignoring: !interactive,
-              child: RenderAreaView(engine: engine, html: controller.currentHtml),
+              child: RepaintBoundary(
+                key: engine.captureKey,
+                child:
+                    RenderAreaView(engine: engine, html: controller.currentHtml),
+              ),
             ),
             // 页面加载完成前显示加载态（引擎 isReady 由 onPageFinished 置位）。
             if (!engine.isReady)
@@ -139,34 +149,75 @@ class _RenderAreaBox extends StatelessWidget {
   }
 }
 
-/// 背景网格画笔。
+/// 背景网格画笔：从原点 (渲染区左上角) 铺开，步长整除渲染区宽高，
+/// 让网格线与渲染区四边完全对齐；并绘制坐标轴与原点标记。
 class _GridPainter extends CustomPainter {
+  _GridPainter({required this.rw, required this.rh});
+
+  final double rw;
+  final double rh;
+
+  /// 候选步长（从大到小），取第一个能同时整除渲染区宽高的值。
+  static const List<double> _steps = [
+    256, 240, 224, 200, 160, 128, 120, 96, 80, 64, 60, 48, 40, 32, 24, 20, 16,
+  ];
+
+  double get _step {
+    for (final s in _steps) {
+      if (rw % s == 0 && rh % s == 0) return s;
+    }
+    return 80;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
+    final step = _step;
     final gridPaint = Paint()
       ..color = const Color(0x0D000000)
       ..strokeWidth = 1;
-    const step = 80.0;
-    var x = 0.0;
+    // 网格线从原点开始铺满整个世界（第一条线在原点上，所以从 step 起画）。
+    var x = step;
     while (x <= size.width) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
       x += step;
     }
-    var y = 0.0;
+    var y = step;
     while (y <= size.height) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
       y += step;
     }
-    // 相机世界中心十字
-    final c = Paint()
-      ..color = const Color(0x22000000)
-      ..strokeWidth = 3;
-    canvas.drawLine(
-        Offset(size.width / 2, 0), Offset(size.width / 2, size.height), c);
-    canvas.drawLine(
-        Offset(0, size.height / 2), Offset(size.width, size.height / 2), c);
+    // 坐标轴沿渲染区顶边(向右)与左边(向下)延伸，正好落在渲染区的角上。
+    final axis = Paint()
+      ..color = const Color(0x408B8B95)
+      ..strokeWidth = 1.4;
+    canvas.drawLine(Offset(0, 0), Offset(rw, 0), axis);
+    canvas.drawLine(Offset(0, 0), Offset(0, rh), axis);
+    // 轴方向箭头（放在渲染区右上角 / 左下角）。
+    _arrow(canvas, Offset(rw, 0), Offset(rw - 10, -4), Offset(rw - 10, 4), axis);
+    _arrow(canvas, Offset(0, rh), Offset(-4, rh - 10), Offset(4, rh - 10), axis);
+    // 原点标记：小圆点 + “0,0” 标签（画在原点右下方，渲染区左上角内侧，保证可见）。
+    canvas.drawCircle(Offset.zero, 3, Paint()..color = const Color(0x808B8B95));
+    final tp = TextPainter(
+      text: const TextSpan(
+        text: '0,0',
+        style: TextStyle(
+            color: Color(0x998B8B95), fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(4, 4));
+  }
+
+  void _arrow(Canvas canvas, Offset tip, Offset a, Offset b, Paint paint) {
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(a.dx, a.dy)
+      ..lineTo(b.dx, b.dy)
+      ..close();
+    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _GridPainter oldDelegate) =>
+      oldDelegate.rw != rw || oldDelegate.rh != rh;
 }

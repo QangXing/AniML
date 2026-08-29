@@ -25,17 +25,26 @@ class ToolBoxPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cfg = controller.config;
-    return Glass(
-      radius: 20,
-      blur: 22,
-      opacity: 0.94,
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-      child: SizedBox(
-        width: 264,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 高度上限：可用高度减去底部工具栏等留白，保证下方“导入 HTML”不被遮挡且可滚动。
+        final avail = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : MediaQuery.sizeOf(context).height;
+        final maxH = (avail - 110).clamp(220.0, 4000.0);
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxH),
+          child: Glass(
+            radius: 20,
+            blur: 22,
+            opacity: 0.94,
+            padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+            child: SizedBox(
+              width: 264,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               Row(
                 children: [
                   const Text('工具箱',
@@ -213,7 +222,10 @@ class ToolBoxPanel extends StatelessWidget {
             ],
           ),
         ),
+        ),
       ),
+    );
+    },
     );
   }
 }

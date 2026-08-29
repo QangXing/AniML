@@ -187,8 +187,8 @@ class _PulseStopState extends State<_PulseStop>
   }
 }
 
-/// 可写入的数字输入框（替代拉条）：确认后回调解析出的数值。
-class _NumInput extends StatelessWidget {
+/// 可写入的数字输入框（替代拉条）：输入即实时回调解析出的数值。
+class _NumInput extends StatefulWidget {
   const _NumInput({
     required this.text,
     required this.enabled,
@@ -202,14 +202,38 @@ class _NumInput extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
+  State<_NumInput> createState() => _NumInputState();
+}
+
+class _NumInputState extends State<_NumInput> {
+  late final TextEditingController _c =
+      TextEditingController(text: widget.text);
+
+  @override
+  void didUpdateWidget(covariant _NumInput old) {
+    super.didUpdateWidget(old);
+    // 仅在未聚焦时同步外部变化，避免打断正在输入的内容。
+    if (!_c.selection.isValid && widget.text != _c.text) {
+      _c.text = widget.text;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final c = TextEditingController(text: text);
     return TextField(
-      controller: c,
-      enabled: enabled,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      controller: _c,
+      enabled: widget.enabled,
+      keyboardType:
+          const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
-        FilteringTextInputFormatter.allow(decimal ? RegExp(r'[\d.]') : RegExp(r'\d')),
+        FilteringTextInputFormatter.allow(
+            widget.decimal ? RegExp(r'[\d.]') : RegExp(r'\d')),
       ],
       textAlign: TextAlign.center,
       style: const TextStyle(fontSize: 14, color: AppTheme.ink),
@@ -226,7 +250,9 @@ class _NumInput extends StatelessWidget {
           borderSide: const BorderSide(color: AppTheme.subInk),
         ),
       ),
-      onSubmitted: onChanged,
+      // 输入即生效：不用等回车/收起键盘，拍摄时直接取到设置值。
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onChanged,
     );
   }
 }

@@ -39,13 +39,13 @@ class _HomePageState extends State<HomePage> {
     super.didChangeDependencies();
     if (_inited) return;
     _inited = true;
-    // 初始把渲染区适配到屏幕内（居中、可缩放）
+    // 初始把渲染区适配到屏幕内（居中、可缩放）。渲染区左上角即原点，相机对准其中心。
     final sz = MediaQuery.sizeOf(context);
     final dw = _controller.config.displayWidth;
     final dh = _controller.config.displayHeight;
     final fit = math.min(sz.width / dw, sz.height / dh) * 0.92;
     _controller.updateCamera(
-      Camera(position: Offset.zero, scale: fit.clamp(0.02, 1.5), rotationDegrees: 0),
+      Camera(position: Offset(dw / 2, dh / 2), scale: fit.clamp(0.02, 1.5), rotationDegrees: 0),
     );
   }
 
