@@ -23,8 +23,8 @@ dependencies:
   # 获取应用文档目录，存放导入的 HTML 副本
   path_provider: ^2.1.0
 
-  # 帧合成 mp4（拍摄）
-  ffmpeg_kit_flutter: ^6.0.3
+  # 帧合成 mp4（拍摄）—— ffmpeg-kit 原构件已从 Maven Central 移除，改用维护中的 fork
+  ffmpeg_kit_flutter_new: ^4.6.2
 
   # 图片编解码（把 PNG 帧交给 ffmpeg 前规范化）
   image: ^4.2.0
