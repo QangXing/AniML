@@ -29,9 +29,6 @@ dependencies:
   # 帧合成 mp4（拍摄）—— ffmpeg-kit 原构件已从 Maven Central 移除，改用维护中的 fork
   ffmpeg_kit_flutter_new: ^4.6.2
 
-  # 图片编解码（把 PNG 帧交给 ffmpeg 前规范化）
-  image: ^4.2.0
-
   # 主免责后续分享视频
   share_plus: ^9.0.0
 
