@@ -20,6 +20,9 @@ void main() {
   runApp(const HighResHtmlApp());
 }
 
+/// 全局 SnackBar 通道，供 Dart 代码在任意时机弹出提示。
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class HighResHtmlApp extends StatelessWidget {
   const HighResHtmlApp({super.key});
 
@@ -28,6 +31,7 @@ class HighResHtmlApp extends StatelessWidget {
     return MaterialApp(
       title: '高像素 HTML 渲染',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       theme: AppTheme.light(),
       home: const HomePage(),
     );

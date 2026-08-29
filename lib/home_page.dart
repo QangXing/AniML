@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
+import '../main.dart' show scaffoldMessengerKey;
 import '../services/html_import_service.dart';
 import '../services/render_engine.dart';
 import '../services/shoot_service.dart';
@@ -149,8 +149,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _toast(String msg) =>
-      Fluttertoast.showToast(msg: msg, gravity: ToastGravity.BOTTOM);
+  void _toast(String msg) {
+    scaffoldMessengerKey.currentState
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(milliseconds: 1800),
+      ));
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
@@ -70,6 +69,4 @@ class VideoEncoder {
     }
     return plain;
   }
-
-  void toast(String msg) => Fluttertoast.showToast(msg: msg, gravity: ToastGravity.CENTER);
 }
