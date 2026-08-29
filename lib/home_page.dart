@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
     final dh = _controller.config.displayHeight;
     final fit = math.min(sz.width / dw, sz.height / dh) * 0.92;
     _controller.updateCamera(
-      Camera(position: Offset.zero, scale: fit.clamp(0.02, 1.5), rotation: 0),
+      Camera(position: Offset.zero, scale: fit.clamp(0.02, 1.5), rotationDegrees: 0),
     );
   }
 
@@ -190,28 +190,7 @@ class _HomePageState extends State<HomePage> {
                     child: _RecBadge(),
                   ),
 
-                // 右下：左侧工具箱开关（工具模式下）
-                if (toolVisible)
-                  Positioned(
-                    right: 12,
-                    top: 12,
-                    child: GestureDetector(
-                      onTap: _controller.toggleToolBox,
-                      child: Glass(
-                        radius: 22,
-                        opacity: 0.86,
-                        padding: const EdgeInsets.all(10),
-                        child: AnimatedRotation(
-                          turns: _controller.toolBoxOpen ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 240),
-                          child: const Icon(Icons.chevron_left,
-                              color: AppTheme.subInk, size: 20),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // 左侧：工具箱面板（从右拉出 + 淡入）
+                // 右侧：工具箱面板（从右拉出 + 淡入）
                 Align(
                   alignment: Alignment.centerRight,
                   child: AnimatedSlide(
@@ -224,7 +203,7 @@ class _HomePageState extends State<HomePage> {
                       duration: const Duration(milliseconds: 240),
                       opacity: toolVisible && _controller.toolBoxOpen ? 1 : 0,
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 56),
+                        padding: const EdgeInsets.only(right: 12),
                         child: ToolBoxPanel(
                           controller: _controller,
                           onImportHtml: _importHtml,

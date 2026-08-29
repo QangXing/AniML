@@ -46,7 +46,8 @@ class _CameraViewportState extends State<CameraViewport> {
     if (!_canGesture) return;
     final start = _startCam ?? widget.controller.camera;
     final sc = (start.scale * d.scale).clamp(0.03, 10.0).toDouble();
-    final rot = start.rotation + d.rotation;
+    // 旋转不再跟随手势：只在工具箱中设置 0/90/180/270/360 档位。
+    final rot = start.rotation;
 
     // 起始焦点对应的世界点
     final m0 = start.worldToScreen(sz);
@@ -60,7 +61,7 @@ class _CameraViewportState extends State<CameraViewport> {
     final p = w0 - ru;
 
     widget.controller.updateCamera(
-      start.copyWith(position: p, scale: sc, rotation: rot),
+      start.copyWith(position: p, scale: sc, rotationDegrees: start.rotationDegrees),
     );
   }
 

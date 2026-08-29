@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../state/home_controller.dart';
 import '../theme.dart';
@@ -48,46 +49,46 @@ class ShootPanel extends StatelessWidget {
                 const Text('时长',
                     style:
                         TextStyle(fontSize: 12, color: AppTheme.subInk)),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Slider(
-                    value: controller.shootSeconds.clamp(1.0, 30.0).toDouble(),
-                    min: 1,
-                    max: 30,
-                    label: '${controller.shootSeconds.round()}s',
-                    activeColor: AppTheme.ink,
-                    inactiveColor: AppTheme.hairline,
-                    onChanged: controller.isRecording
-                        ? null
-                        : (v) => controller.setShootSeconds(v),
+                  child: _NumInput(
+                    text: controller.shootSeconds.round().toString(),
+                    enabled: !controller.isRecording,
+                    decimal: false,
+                    onChanged: (s) {
+                      final v = double.tryParse(s);
+                      if (v != null) controller.setShootSeconds(v);
+                    },
                   ),
                 ),
-                Text('${controller.shootSeconds.round()} s',
+                const SizedBox(width: 8),
+                const Text('秒',
                     style:
-                        const TextStyle(color: AppTheme.subInk, fontSize: 12)),
+                        TextStyle(fontSize: 12, color: AppTheme.subInk)),
               ],
             ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 const Text('帧率',
                     style:
                         TextStyle(fontSize: 12, color: AppTheme.subInk)),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Slider(
-                    value: controller.shootFps.toDouble().clamp(5, 60).toDouble(),
-                    min: 5,
-                    max: 60,
-                    divisions: 11,
-                    label: '${controller.shootFps}fps',
-                    activeColor: AppTheme.ink,
-                    inactiveColor: AppTheme.hairline,
-                    onChanged: controller.isRecording
-                        ? null
-                        : (v) => controller.setShootFps(v.round()),
+                  child: _NumInput(
+                    text: controller.shootFps.toString(),
+                    enabled: !controller.isRecording,
+                    decimal: false,
+                    onChanged: (s) {
+                      final v = int.tryParse(s);
+                      if (v != null) controller.setShootFps(v);
+                    },
                   ),
                 ),
-                Text('${controller.shootFps} fps',
+                const SizedBox(width: 8),
+                const Text('fps',
                     style:
-                        const TextStyle(color: AppTheme.subInk, fontSize: 12)),
+                        TextStyle(fontSize: 12, color: AppTheme.subInk)),
               ],
             ),
             const SizedBox(height: 6),
@@ -182,6 +183,50 @@ class _PulseStopState extends State<_PulseStop>
         scale: 1.0 + _c.value * 0.25,
         child: const Icon(Icons.stop, size: 18, color: Colors.white),
       ),
+    );
+  }
+}
+
+/// 可写入的数字输入框（替代拉条）：确认后回调解析出的数值。
+class _NumInput extends StatelessWidget {
+  const _NumInput({
+    required this.text,
+    required this.enabled,
+    required this.decimal,
+    required this.onChanged,
+  });
+
+  final String text;
+  final bool enabled;
+  final bool decimal;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = TextEditingController(text: text);
+    return TextField(
+      controller: c,
+      enabled: enabled,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(decimal ? RegExp(r'[\d.]') : RegExp(r'\d')),
+      ],
+      textAlign: TextAlign.center,
+      style: const TextStyle(fontSize: 14, color: AppTheme.ink),
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.hairline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.subInk),
+        ),
+      ),
+      onSubmitted: onChanged,
     );
   }
 }

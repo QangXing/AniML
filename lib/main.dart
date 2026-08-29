@@ -29,7 +29,7 @@ class HighResHtmlApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '高像素 HTML 渲染',
+      title: 'AniML',
       debugShowCheckedModeBanner: false,
       scaffoldMessengerKey: scaffoldMessengerKey,
       theme: AppTheme.light(),

@@ -95,29 +95,63 @@ class ToolBoxPanel extends StatelessWidget {
               ),
               const SizedBox(height: 18),
 
-              _SectionTitle('像素比（屏幕显示缩放）'),
-              const SizedBox(height: 4),
+              _SectionTitle('相机缩放（镜头放大比例）'),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: Slider(
-                      value: cfg.pixelScale.clamp(0.1, 3.0).toDouble(),
-                      min: 0.1,
-                      max: 3.0,
-                      activeColor: AppTheme.ink,
-                      inactiveColor: AppTheme.hairline,
-                      onChanged: (v) => controller.updateConfig(
-                          controller.config..pixelScale = v),
+                    child: _DoubleField(
+                      label: '缩放',
+                      value: controller.camera.scale,
+                      onChanged: (v) => controller.updateCamera(
+                          controller.camera.copyWith(scale: v.clamp(0.03, 10.0))),
                     ),
                   ),
-                  Text('x${cfg.pixelScale.toStringAsFixed(1)}',
-                      style: const TextStyle(color: AppTheme.subInk)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _DoubleField(
+                      label: '像素比',
+                      value: cfg.pixelScale,
+                      onChanged: (v) => controller.updateConfig(
+                          controller.config..pixelScale = v.clamp(0.1, 3.0)),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                '屏幕显示 = 像素 × ${cfg.pixelScale.toStringAsFixed(1)}',
+                '屏幕显示尺寸 = 渲染像素 × 像素比',
                 style: const TextStyle(color: AppTheme.subInk, fontSize: 11),
+              ),
+              const SizedBox(height: 18),
+
+              _SectionTitle('旋转角度'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final deg in const [0, 90, 180, 270, 360])
+                    ChoiceChip(
+                      label: Text('$deg°',
+                          style: const TextStyle(fontSize: 12)),
+                      selected: controller.camera.rotationDegrees == deg,
+                      selectedColor: AppTheme.ink,
+                      backgroundColor: Colors.transparent,
+                      side: BorderSide(
+                        color: controller.camera.rotationDegrees == deg
+                            ? AppTheme.ink
+                            : AppTheme.hairline,
+                      ),
+                      labelStyle: TextStyle(
+                        color: controller.camera.rotationDegrees == deg
+                            ? Colors.white
+                            : AppTheme.ink,
+                      ),
+                      onSelected: (_) => controller.updateCamera(
+                          controller.camera.copyWith(rotationDegrees: deg)),
+                    ),
+                ],
               ),
               const SizedBox(height: 18),
 
@@ -228,6 +262,47 @@ class _NumField extends StatelessWidget {
             ),
             onSubmitted: (s) =>
                 onChanged(int.tryParse(s) ?? value),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DoubleField extends StatelessWidget {
+  const _DoubleField({required this.label, required this.value, required this.onChanged});
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = TextEditingController(text: value.toStringAsFixed(2));
+    return Row(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.subInk)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: TextField(
+            controller: c,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+            ],
+            style: const TextStyle(fontSize: 13, color: AppTheme.ink),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppTheme.hairline),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppTheme.subInk),
+              ),
+            ),
+            onSubmitted: (s) => onChanged(double.tryParse(s) ?? value),
           ),
         ),
       ],

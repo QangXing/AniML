@@ -104,16 +104,19 @@ class _RenderAreaBox extends StatelessWidget {
               child: Text('导入 HTML 后在此渲染',
                   style: TextStyle(color: AppTheme.subInk, fontSize: 14)),
             )
-          else if (engine.isReady)
+          else ...[
+            // 只要有 HTML 就挂载 WebView，触发引擎加载；否则引擎永远不会收到加载请求。
             IgnorePointer(
               ignoring: !interactive,
               child: RenderAreaView(engine: engine, html: controller.currentHtml),
-            )
-          else
-            const Center(
-              child: CircularProgressIndicator(
-                  color: AppTheme.subInk, strokeWidth: 2),
             ),
+            // 页面加载完成前显示加载态（引擎 isReady 由 onPageFinished 置位）。
+            if (!engine.isReady)
+              const Center(
+                child: CircularProgressIndicator(
+                    color: AppTheme.subInk, strokeWidth: 2),
+              ),
+          ],
           // 左上角尺寸标注
           Positioned(
             left: 6,

@@ -73,13 +73,13 @@ class _AppLogoBarState extends State<AppLogoBar>
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('高像素 HTML 渲染',
+              Text('AniML',
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.ink)),
               SizedBox(height: 1),
-              Text('◀ ▶  AniML', // 呼应 logo 的代码+播放语义
+              Text('高像素 HTML 渲染',
                   style: TextStyle(fontSize: 10, color: AppTheme.subInk)),
             ],
           ),

@@ -9,7 +9,7 @@
         tools:ignore="ScopedStorage"/>
 
     <application
-        android:label="高像素渲染"
+        android:label="AniML"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

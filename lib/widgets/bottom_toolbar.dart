@@ -55,7 +55,7 @@ class BottomToolbar extends StatelessWidget {
                   icon: Icons.handyman,
                   label: '工具箱',
                   active: controller.mode == Mode.tool,
-                  onTap: () => controller.setMode(Mode.tool),
+                  onTap: controller.tapTool,
                 ),
                 _SpringItem(
                   icon: Icons.videocam,

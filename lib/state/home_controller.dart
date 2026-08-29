@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -23,7 +24,11 @@ class HtmlPage {
 
 /// 相机：把「渲染世界」投影到手机屏幕。
 class Camera {
-  Camera({this.position = Offset.zero, this.scale = 1.0, this.rotation = 0.0});
+  Camera({
+    this.position = Offset.zero,
+    this.scale = 1.0,
+    this.rotationDegrees = 0,
+  });
 
   /// 相机中心在“世界坐标”中的位置。
   Offset position;
@@ -31,14 +36,17 @@ class Camera {
   /// 缩放。
   double scale;
 
-  /// 旋转（弧度）。
-  double rotation;
+  /// 旋转角度（度）。仅允许 0 / 90 / 180 / 270 / 360。
+  int rotationDegrees;
 
-  Camera copyWith({Offset? position, double? scale, double? rotation}) =>
+  /// 旋转（弧度），供矩阵计算使用。
+  double get rotation => rotationDegrees * math.pi / 180;
+
+  Camera copyWith({Offset? position, double? scale, int? rotationDegrees}) =>
       Camera(
         position: position ?? this.position,
         scale: scale ?? this.scale,
-        rotation: rotation ?? this.rotation,
+        rotationDegrees: rotationDegrees ?? this.rotationDegrees,
       );
 
   /// 世界 -> 屏幕 的变换矩阵。
@@ -93,6 +101,17 @@ class HomeController extends ChangeNotifier {
 
   void toggleToolBox() {
     toolBoxOpen = !toolBoxOpen;
+    notifyListeners();
+  }
+
+  /// 点击底部「工具箱」：不在工具模式则进入并自动展开面板，已在则切换开关。
+  void tapTool() {
+    if (mode != Mode.tool) {
+      mode = Mode.tool;
+      toolBoxOpen = true;
+    } else {
+      toolBoxOpen = !toolBoxOpen;
+    }
     notifyListeners();
   }
 
