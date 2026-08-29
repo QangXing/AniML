@@ -116,7 +116,7 @@ class RenderEngine extends ChangeNotifier {
     if (!_ready) return null;
     if (background != null) {
       await _created.runJavaScript(
-          'try{window.__setBg && window.__setBg("${background}");}catch(e){}');
+          'try{window.__setBg && window.__setBg("$background");}catch(e){}');
     }
     final resolveScript = 'window.__capture($w,$h).then(function(uri){'
         'if(uri){window.flutterCapture.postMessage(uri);}'

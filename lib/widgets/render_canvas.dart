@@ -143,7 +143,7 @@ class _GridPainter extends CustomPainter {
     final gridPaint = Paint()
       ..color = const Color(0x0D000000)
       ..strokeWidth = 1;
-    final step = 80.0;
+    const step = 80.0;
     var x = 0.0;
     while (x <= size.width) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);

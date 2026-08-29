@@ -17,6 +17,9 @@ dependencies:
   webview_flutter_android: ^3.13.0
   webview_flutter_wkwebview: ^3.13.0
 
+  # 相机视口矩阵运算
+  vector_math: ^2.1.4
+
   # 选择并导入本地 HTML 文件
   file_picker: ^8.0.0
 

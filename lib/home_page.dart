@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'close',
-      barrierColor: Colors.black.withOpacity(0.18),
+      barrierColor: Colors.black.withValues(alpha: 0.18),
       transitionDuration: const Duration(milliseconds: 380),
       pageBuilder: (_, __, ___) => _buildDoneCard(path),
       transitionBuilder: (context, anim, _, child) {

@@ -15,7 +15,7 @@ class BottomToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final order = const [Mode.search, Mode.tool, Mode.shoot];
+    const order = [Mode.search, Mode.tool, Mode.shoot];
     final idx = order.indexOf(controller.mode);
 
     return Glass(
@@ -37,7 +37,7 @@ class BottomToolbar extends StatelessWidget {
               width: _itemW,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0x33000000).withOpacity(0.05),
+                  color: const Color(0x33000000).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: const Color(0x14000000)),
                 ),

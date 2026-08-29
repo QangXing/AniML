@@ -23,7 +23,7 @@ class VideoEncoder {
     if (frames.isEmpty) {
       throw StateError('没有可用的帧');
     }
-    final temp = Directory((await getTemporaryDirectory()).path + '/frames');
+    final temp = Directory('${(await getTemporaryDirectory()).path}/frames');
     if (await temp.exists()) await temp.delete(recursive: true);
     await temp.create(recursive: true);
 

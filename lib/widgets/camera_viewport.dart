@@ -49,8 +49,8 @@ class _CameraViewportState extends State<CameraViewport> {
     final rot = start.rotation + d.rotation;
 
     // 起始焦点对应的世界点
-    final M0 = start.worldToScreen(sz);
-    final w0 = _toWorld(M0, _startFocal);
+    final m0 = start.worldToScreen(sz);
+    final w0 = _toWorld(m0, _startFocal);
 
     // 让该世界点现在仍落在当前焦点下
     final u = Offset((d.localFocalPoint.dx - sz.width / 2) / sc,
