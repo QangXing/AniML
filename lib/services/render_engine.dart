@@ -123,7 +123,7 @@ class RenderEngine extends ChangeNotifier {
         'else{window.flutterCapture.postMessage("__NULL__");}'
         '});';
     final completer = Completer<Uint8List?>();
-    final sub = _stream.listen((msg) {
+    final sub = _stream.stream.listen((msg) {
       if (!completer.isCompleted) completer.complete(msg);
     });
     try {

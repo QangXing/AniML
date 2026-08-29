@@ -17,10 +17,16 @@ class AppLogoBar extends StatefulWidget {
 class _AppLogoBarState extends State<AppLogoBar>
     with SingleTickerProviderStateMixin {
   late final AnimationController _floatC =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 4800), repeat: true);
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 4800));
   late final Animation<double> _float = Tween<double>(begin: 0, end: 1).animate(
     CurvedAnimation(parent: _floatC, curve: Curves.easeInOutSine),
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _floatC.repeat();
+  }
 
   @override
   void dispose() {

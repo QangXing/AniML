@@ -88,8 +88,6 @@ class ShootService {
   }
 
   Future<void> share(String path) async {
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(path)]),
-    );
+    await Share.shareXFiles([XFile(path)]);
   }
 }

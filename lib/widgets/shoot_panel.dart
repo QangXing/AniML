@@ -58,7 +58,7 @@ class ShootPanel extends StatelessWidget {
                     inactiveColor: AppTheme.hairline,
                     onChanged: controller.isRecording
                         ? null
-                        : (v) => (controller..shootSeconds = v).notifyListeners(),
+                        : (v) => controller.setShootSeconds(v),
                   ),
                 ),
                 Text('${controller.shootSeconds.round()} s',
@@ -82,7 +82,7 @@ class ShootPanel extends StatelessWidget {
                     inactiveColor: AppTheme.hairline,
                     onChanged: controller.isRecording
                         ? null
-                        : (v) => (controller..shootFps = v.round()).notifyListeners(),
+                        : (v) => controller.setShootFps(v.round()),
                   ),
                 ),
                 Text('${controller.shootFps} fps',

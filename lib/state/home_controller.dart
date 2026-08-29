@@ -5,6 +5,9 @@ import 'package:vector_math/vector_math_64.dart' show Matrix4;
 
 import '../models/render_config.dart';
 
+/// 底部三功能：搜索（镜头操作）、工具箱（参数）、拍摄。
+enum Mode { search, tool, shoot }
+
 /// 导入的一页 HTML。
 class HtmlPage {
   HtmlPage({
@@ -137,6 +140,16 @@ class HomeController extends ChangeNotifier {
 
   void setRecordProgress(double p) {
     recordProgress = p;
+    notifyListeners();
+  }
+
+  void setShootSeconds(double v) {
+    shootSeconds = v.clamp(1.0, 30.0).toDouble();
+    notifyListeners();
+  }
+
+  void setShootFps(int v) {
+    shootFps = v.clamp(5, 60).toInt();
     notifyListeners();
   }
 }

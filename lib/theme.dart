@@ -13,7 +13,6 @@ class AppTheme {
   static const Color accent = Color(0xFF7C7C80); // 选中态中性灰
 
   /// 毛玻璃地调用。
-  static const Color _glassWhite = Color(0xE6FFFFFF);
   static const Color _glassBorder = Color(0x33FFFFFF);
 
   static ThemeData light() {

@@ -8,11 +8,11 @@ import '../services/render_engine.dart';
 import '../services/shoot_service.dart';
 import '../state/home_controller.dart';
 import '../theme.dart';
-import 'app_logo_bar.dart';
-import 'bottom_toolbar.dart';
-import 'camera_viewport.dart';
-import 'shoot_panel.dart';
-import 'toolbox_panel.dart';
+import 'widgets/app_logo_bar.dart';
+import 'widgets/bottom_toolbar.dart';
+import 'widgets/camera_viewport.dart';
+import 'widgets/shoot_panel.dart';
+import 'widgets/toolbox_panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
