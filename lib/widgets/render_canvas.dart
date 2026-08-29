@@ -63,9 +63,7 @@ class RenderCanvas extends StatelessWidget {
           // 背景网格叠在最上层（纯取景辅助，不进视频）：
           // 从原点 (渲染区左上角) 铺开，步长整除渲染区宽高保证边缘对齐。
           Positioned.fill(
-              child: CustomPaint(
-                  clipBehavior: Clip.none,
-                  painter: _GridPainter(rw: rw, rh: rh))),
+              child: CustomPaint(painter: _GridPainter(rw: rw, rh: rh))),
         ],
       ),
     );
