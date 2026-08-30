@@ -20,18 +20,73 @@ const String _captureScript = r'''
   window.__capInstalled = true;
   var bgCache = '#ffffff';
   window.__setBg = function(c){ bgCache = c || '#ffffff'; };
+
+  // 录制虚拟时钟：拍摄时暂停页面动画，按 1/fps 逐帧拨动 currentTime，
+  // 让每一帧都对应精确的动画时间，彻底摆脱“抓帧慢 → 动画已跑远 → 视频跳变”。
+  window.__rec = {
+    active: false,
+    anims: [],
+    t: 0,
+    fps: 30,
+    begin: function(fps) {
+      this.active = true;
+      this.fps = fps || 30;
+      this.t = 0;
+      this._snap();
+      this._seekAll(0);
+    },
+    _snap: function() {
+      var all = [];
+      try { all = document.getAnimations() || []; } catch(e){ all = []; }
+      this.anims = [];
+      for (var i = 0; i < all.length; i++) {
+        var a = all[i];
+        if (!a) continue;
+        try { this.anims.push(a); a.pause(); } catch(e){}
+      }
+    },
+    _seekAll: function(ms) {
+      for (var i = 0; i < this.anims.length; i++) {
+        try {
+          var a = this.anims[i];
+          if (a.playState === 'paused') a.currentTime = ms;
+        } catch(e){}
+      }
+    },
+    seek: function(s) {
+      if (!this.active) return;
+      this.t = s;
+      this._seekAll(s * 1000);
+      // 强制同步 reflow：确保浏览器立刻按 seek 后的时间重算样式/布局，
+      // 这样 getComputedStyle 与绘制都反映当前帧，而不是停在上一帧。
+      try { document.body && document.body.offsetHeight; } catch(e){}
+    },
+    end: function() {
+      this.active = false;
+      for (var i = 0; i < this.anims.length; i++) {
+        try {
+          var a = this.anims[i];
+          if (a.playState === 'paused') a.play();
+        } catch(e){}
+      }
+      this.anims = [];
+    }
+  };
+
   window.__capture = function(w, h){
     return new Promise(function(resolve){
       try {
-        // 把合成线程上的动画当前值写回主线程内联样式：
-        // transform/opacity 这类 CSS 动画默认跑在合成线程上，
-        // getComputedStyle 只会读到初始帧，导致连续抓帧画面永远定格。
+        // 非录制态才 commitStyles：把合成线程上的动画当前值写回主线程内联样式，
+        // 让 CSS 动画当前帧被如实保留。录制态由虚拟时钟逐帧 seek 控制动画，
+        // 若再 commitStyles 会把动画效果烘焙进内联样式，破坏后续 seek。
         try {
-          var anims = document.getAnimations();
-          for (var i = 0; i < anims.length; i++) {
-            var a = anims[i];
-            if (a && typeof a.commitStyles === 'function') {
-              try { a.commitStyles(); } catch (e2) {}
+          if (!window.__rec || !window.__rec.active) {
+            var anims = document.getAnimations();
+            for (var i = 0; i < anims.length; i++) {
+              var a = anims[i];
+              if (a && typeof a.commitStyles === 'function') {
+                try { a.commitStyles(); } catch (e2) {}
+              }
             }
           }
         } catch (e1) {}
@@ -118,6 +173,11 @@ class RenderEngine extends ChangeNotifier {
   /// 用它直接截取 WebView 当前屏幕画面（含 CSS/JS 动画），速度远快于 JS 栅格化。
   final GlobalKey captureKey = GlobalKey();
 
+  /// 平台视图（WebView）能否被 RepaintBoundary 直接截取。
+  /// 这是设备级稳定属性，缓存后不必每帧都做小图探测，定期复查即可。
+  bool? _viewCaptureWorks;
+  int _captureCount = 0;
+
   WebViewController get controller => _created;
   bool get isReady => _ready;
   Uint8List? get loadedHtml => _loaded;
@@ -146,6 +206,27 @@ class RenderEngine extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 进入录制：暂停页面动画并把录制虚拟时钟归零（从动画起点开始逐帧拍摄）。
+  Future<void> beginRecord(int fps) async {
+    if (!_ready) return;
+    await _created.runJavaScript(
+        'try{window.__rec && window.__rec.begin($fps);}catch(e){}');
+  }
+
+  /// 把录制虚拟时钟拨到 [seconds] 秒（动画从 0 开始，一帧对应一个精确时刻）。
+  Future<void> seekRecord(double seconds) async {
+    if (!_ready) return;
+    await _created.runJavaScript(
+        'try{window.__rec && window.__rec.seek($seconds);}catch(e){}');
+  }
+
+  /// 结束录制：恢复页面动画，回到实时播放。
+  Future<void> endRecord() async {
+    if (!_ready) return;
+    await _created
+        .runJavaScript('try{window.__rec && window.__rec.end();}catch(e){}');
+  }
+
   /// 抓取渲染区在 [w] x [h] 像素下的实时 PNG。
   /// 优先用 RepaintBoundary 直取 WebView 当前渲染画面（能拍到 CSS/JS 动画），
   /// 失败时回退到 JS 整页栅格化（同样保留动画当前帧）。都失败返回 null。
@@ -165,6 +246,7 @@ class RenderEngine extends ChangeNotifier {
   /// 先用小尺寸探测确认平台视图已合成进层树（否则返回 null 走 JS 回退）：
   /// 要求探测图里同时存在**不透明**像素和**有变化**的内容，
   /// 避免 SurfaceControl 设备把平台视图截成“全透明空洞”或“纯白空白”而产出坏帧。
+  /// 探测结果按设备缓存（定期复查），省掉每帧一次 GPU 读 + CPU 扫描，提升抓帧速度。
   Future<Uint8List?> _captureFromView(int w, int h) async {
     final ctx = captureKey.currentContext;
     final boundary = ctx?.findRenderObject() as RenderRepaintBoundary?;
@@ -173,33 +255,11 @@ class RenderEngine extends ChangeNotifier {
     }
     try {
       final baseW = boundary.size.width;
-      final probe = await boundary.toImage(pixelRatio: 48 / baseW);
-      var probeOk = false;
-      try {
-        final pd = await probe.toByteData(format: ui.ImageByteFormat.rawRgba);
-        final px = pd?.buffer.asUint8List();
-        if (px != null) {
-          var firstColor = -1;
-          var varied = false;
-          for (var i = 0; i + 3 < px.length; i += 4 * 16) {
-            if (px[i + 3] <= 10) continue; // 跳过透明像素
-            final c = (px[i] << 24) |
-                (px[i + 1] << 16) |
-                (px[i + 2] << 8) |
-                px[i + 3];
-            if (firstColor == -1) {
-              firstColor = c;
-            } else if (c != firstColor) {
-              varied = true;
-              break;
-            }
-          }
-          probeOk = firstColor != -1 && varied;
-        }
-      } finally {
-        probe.dispose();
+      _captureCount++;
+      if (_viewCaptureWorks != true || _captureCount % 20 == 0) {
+        _viewCaptureWorks = await _probeView(boundary, baseW);
       }
-      if (!probeOk) return null;
+      if (_viewCaptureWorks != true) return null;
       final img = await boundary.toImage(pixelRatio: w / baseW);
       try {
         final data = await img.toByteData(format: ui.ImageByteFormat.png);
@@ -209,6 +269,38 @@ class RenderEngine extends ChangeNotifier {
       }
     } catch (_) {
       return null;
+    }
+  }
+
+  /// 小图探测：判断平台视图是否真的被合成进 Flutter 层树可截。
+  Future<bool> _probeView(RenderRepaintBoundary boundary, double baseW) async {
+    try {
+      final probe = await boundary.toImage(pixelRatio: 48 / baseW);
+      try {
+        final pd = await probe.toByteData(format: ui.ImageByteFormat.rawRgba);
+        final px = pd?.buffer.asUint8List();
+        if (px == null) return false;
+        var firstColor = -1;
+        var varied = false;
+        for (var i = 0; i + 3 < px.length; i += 4 * 16) {
+          if (px[i + 3] <= 10) continue; // 跳过透明像素
+          final c = (px[i] << 24) |
+              (px[i + 1] << 16) |
+              (px[i + 2] << 8) |
+              px[i + 3];
+          if (firstColor == -1) {
+            firstColor = c;
+          } else if (c != firstColor) {
+            varied = true;
+            break;
+          }
+        }
+        return firstColor != -1 && varied;
+      } finally {
+        probe.dispose();
+      }
+    } catch (_) {
+      return false;
     }
   }
 

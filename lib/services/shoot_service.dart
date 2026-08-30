@@ -48,10 +48,19 @@ class ShootService {
     await _framesDir!.create(recursive: true);
 
     const bg = '#ffffff';
-    final interval =
-        Duration(milliseconds: (1000 / fps).round().clamp(1, 10000));
+    // 帧间仅需留出浏览器绘制“seek 后画面”的时间即可，不再按帧率等待，
+    // 虚拟时钟已决定每帧内容，无需真实时间对齐；范围 16~40ms 足够一次合成。
+    final perFrameMs = (1000 / fps).round();
+    final settleMs = perFrameMs < 16 ? 16 : (perFrameMs > 40 ? 40 : perFrameMs);
+    final settle = Duration(milliseconds: settleMs);
 
     _running = true;
+    // 进入录制模式：暂停页面动画并用虚拟时钟逐帧驱动。
+    // 每一帧先把动画拨到精确时间再抓，避免“抓帧慢 → 动画已跑远 → 视频跳变”。
+    await _engine.beginRecord(fps);
+    // 等 t=0 的画面绘制完成再抓第一帧。
+    await Future.delayed(settle);
+
     var index = 0;
     var written = 0;
     // 串行抓帧：等上一帧完成再抓下一帧，杜绝 Timer 重叠导致的帧数爆炸与内存峰值。
@@ -66,9 +75,13 @@ class ShootService {
       index++;
       _controller.setRecordProgress(index / total);
       if (_running && index < total) {
-        await Future.delayed(interval);
+        // 拨到下一帧对应的动画时间，并留出浏览器绘制该帧的时间。
+        await _engine.seekRecord(index / fps);
+        await Future.delayed(settle);
       }
     }
+    // 无论成功/取消都恢复页面动画。
+    await _engine.endRecord();
 
     _running = false;
     _controller.setRecording(false);
