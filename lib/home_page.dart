@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 
 import '../main.dart' show scaffoldMessengerKey;
 import '../services/html_import_service.dart';
@@ -78,16 +79,25 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _onVideoDone(String path) {
+  Future<void> _onVideoDone(String path) async {
     _lastVideoPath = path;
-    _toast('拍摄完成，mp4 已生成');
+    // 自动保存到系统影片目录（MediaStore / Movies）
+    var savedToGallery = false;
+    try {
+      await Gal.putVideo(path);
+      savedToGallery = true;
+      _toast('拍摄完成，已自动保存到系统影片目录');
+    } catch (e) {
+      _toast('拍摄完成，但保存到系统影片目录失败');
+    }
+    if (!mounted) return;
     showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'close',
       barrierColor: Colors.black.withValues(alpha: 0.18),
       transitionDuration: const Duration(milliseconds: 380),
-      pageBuilder: (_, __, ___) => _buildDoneCard(path),
+      pageBuilder: (_, __, ___) => _buildDoneCard(path, savedToGallery),
       transitionBuilder: (context, anim, _, child) {
         final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
         return FadeTransition(
@@ -98,7 +108,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDoneCard(String path) {
+  Widget _buildDoneCard(String path, bool savedToGallery) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -117,8 +127,9 @@ class _HomePageState extends State<HomePage> {
                     fontWeight: FontWeight.w700,
                     color: AppTheme.ink)),
             const SizedBox(height: 4),
-            const Text('mp4 已生成并保存到临时目录',
-                style: TextStyle(fontSize: 13, color: AppTheme.subInk)),
+            Text(savedToGallery ? 'mp4 已自动保存到系统影片目录' : 'mp4 已生成（保存到影片目录失败，可分享导出）',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: AppTheme.subInk)),
             const SizedBox(height: 16),
             Row(
               mainAxisSize: MainAxisSize.min,

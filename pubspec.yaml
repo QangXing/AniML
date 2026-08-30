@@ -32,6 +32,9 @@ dependencies:
   # 主免责后续分享视频
   share_plus: ^9.0.0
 
+  # 拍摄完成后把 mp4 自动保存到系统影片目录（MediaStore，Android 10+ 无需额外权限）
+  gal: ^2.3.3
+
   cupertino_icons: ^1.0.6
 
 dev_dependencies:
