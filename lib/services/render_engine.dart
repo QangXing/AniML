@@ -32,6 +32,10 @@ const String _captureScript = r'''
       this.active = true;
       this.fps = fps || 30;
       this.t = 0;
+      // 冻结 requestAnimationFrame：堵住 JS 驱动的动画（canvas/DOM 逐帧刷新）
+      // 在录制期间继续往前跑，否则即使 CSS 动画被虚拟时钟锁住，JS 动画仍会让
+      // 画面随时间漂移，出现“抓这一帧时 HTML 已经往下渲染了好几次”。
+      this._freezeRaf();
       this._snap();
       this._seekAll(0);
     },
@@ -70,6 +74,22 @@ const String _captureScript = r'''
         } catch(e){}
       }
       this.anims = [];
+      this._unfreezeRaf();
+    },
+    _freezeRaf: function() {
+      try {
+        if (window.__origRaf) return;
+        window.__origRaf = window.requestAnimationFrame;
+        window.requestAnimationFrame = function(){ return 0; };
+      } catch(e){}
+    },
+    _unfreezeRaf: function() {
+      try {
+        if (window.__origRaf) {
+          window.requestAnimationFrame = window.__origRaf;
+          window.__origRaf = null;
+        }
+      } catch(e){}
     }
   };
 
@@ -242,6 +262,79 @@ class RenderEngine extends ChangeNotifier {
     return viaJs;
   }
 
+  /// 抓取一帧**裸 RGB24**（无 PNG 编码），供拍摄管线边拍边写盘、ffmpeg 直接读。
+  /// 跳过手机端昂贵的 PNG 编码，显著提升抓帧速度；帧尺寸恒为 [w] x [h]。
+  /// 失败返回 null（此时不写盘，与旧逻辑一致）。
+  Future<RawFrame?> captureRaw(int w, int h, {String? background}) async {
+    if (!_ready) return null;
+    final fromView = await _captureFromViewRaw(w, h);
+    if (fromView != null) return fromView;
+    final png = await _captureViaJs(w, h, background: background);
+    if (png == null) return null;
+    final rgb = await _pngToRgb24(png);
+    return rgb == null ? null : RawFrame(rgb, w, h);
+  }
+
+  /// 把一张 PNG 解码成 RGB24 裸像素（回退路径专用，频率低，可接受）。
+  Future<Uint8List?> _pngToRgb24(Uint8List png) async {
+    try {
+      final codec = await ui.instantiateImageCodec(png);
+      final frame = await codec.getNextFrame();
+      final img = frame.image;
+      try {
+        final data = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+        if (data == null) return null;
+        return _dropAlpha(data.buffer.asUint8List(), img.width, img.height);
+      } finally {
+        img.dispose();
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// RGBA 裸像素 -> RGB24（去掉 alpha 通道，每像素 4 字节压成 3 字节）。
+  Uint8List _dropAlpha(Uint8List rgba, int w, int h) {
+    final n = w * h;
+    final rgb = Uint8List(n * 3);
+    for (var i = 0, j = 0; i < n; i++, j += 3) {
+      final s = i * 4;
+      rgb[j] = rgba[s];
+      rgb[j + 1] = rgba[s + 1];
+      rgb[j + 2] = rgba[s + 2];
+    }
+    return rgb;
+  }
+
+  /// 从渲染区 WebView 的 RepaintBoundary 直取当前画面并转成 RGB24。
+  /// 探测结果按设备缓存（定期复查），省掉每帧一次 GPU 读 + CPU 扫描。
+  Future<RawFrame?> _captureFromViewRaw(int w, int h) async {
+    final ctx = captureKey.currentContext;
+    final boundary = ctx?.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null || !boundary.hasSize || boundary.size.isEmpty) {
+      return null;
+    }
+    try {
+      final baseW = boundary.size.width;
+      _captureCount++;
+      if (_viewCaptureWorks != true || _captureCount % 20 == 0) {
+        _viewCaptureWorks = await _probeView(boundary, baseW);
+      }
+      if (_viewCaptureWorks != true) return null;
+      final img = await boundary.toImage(pixelRatio: w / baseW);
+      try {
+        final data = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+        if (data == null) return null;
+        final rgb = _dropAlpha(data.buffer.asUint8List(), img.width, img.height);
+        return RawFrame(rgb, img.width, img.height);
+      } finally {
+        img.dispose();
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 从渲染区 WebView 的 RepaintBoundary 直接截取当前画面。
   /// 先用小尺寸探测确认平台视图已合成进层树（否则返回 null 走 JS 回退）：
   /// 要求探测图里同时存在**不透明**像素和**有变化**的内容，
@@ -385,4 +478,13 @@ class _RenderAreaViewState extends State<RenderAreaView> {
   Widget build(BuildContext context) {
     return WebViewWidget(controller: widget.engine.controller);
   }
+}
+
+/// 一帧裸 RGB24 像素（无 PNG 编码），供拍摄管线直接写盘交给 ffmpeg。
+class RawFrame {
+  RawFrame(this.rgb, this.width, this.height);
+
+  final Uint8List rgb;
+  final int width;
+  final int height;
 }

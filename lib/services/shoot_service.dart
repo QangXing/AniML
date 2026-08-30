@@ -63,13 +63,22 @@ class ShootService {
 
     var index = 0;
     var written = 0;
+    var frameW = width;
+    var frameH = height;
     // 串行抓帧：等上一帧完成再抓下一帧，杜绝 Timer 重叠导致的帧数爆炸与内存峰值。
+    // 每帧以裸 RGB24 写盘（跳过 PNG 编码），ffmpeg 直接读裸帧，大幅提速。
     while (_running && index < total) {
-      final png = await _engine.capture(width, height, background: bg);
-      if (_running && png != null) {
+      final frame = await _engine.captureRaw(width, height, background: bg);
+      if (_running && frame != null) {
+        if (written == 0) {
+          // 以首帧实际尺寸为准：toImage 的 ceil 舍入在非整数缩放时可能偏差 1px，
+          // 而裸帧解码要求尺寸完全精确，否则整段解析错乱。
+          frameW = frame.width;
+          frameH = frame.height;
+        }
         await File(
-                '${_framesDir!.path}/frame_${written.toString().padLeft(4, '0')}.png')
-            .writeAsBytes(png);
+                '${_framesDir!.path}/frame_${written.toString().padLeft(4, '0')}.rgba')
+            .writeAsBytes(frame.rgb);
         written++;
       }
       index++;
@@ -82,6 +91,8 @@ class ShootService {
     }
     // 无论成功/取消都恢复页面动画。
     await _engine.endRecord();
+    // 拍摄结束后刷新一次预览帧（PNG），用于渲染区背景的淡化底图。
+    await _engine.capture(width, height, background: bg);
 
     _running = false;
     _controller.setRecording(false);
@@ -100,6 +111,8 @@ class ShootService {
         count: written,
         width: width,
         height: height,
+        frameWidth: frameW,
+        frameHeight: frameH,
         fps: fps,
       );
       onDone(out);
